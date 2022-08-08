@@ -68,8 +68,6 @@ public class EmployeeService {
         }
         if(offset == null){
             offset = 0;
-        }else if(offset == 0){
-            //resource not found
         }
         if(sort != null){
             if(sort.equalsIgnoreCase("asc")){
@@ -82,7 +80,7 @@ public class EmployeeService {
         }
 
         pageEmployeeRequest = PageRequest.of(offset, limit, direction, sortBy.toArray(new String[0]));
-        List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(entityManager, departmentId, projectId, sort, sortBy);
+        List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(entityManager, departmentId, projectId, offset, limit, sort, sortBy);
 
         Integer countEmployees = employeeRepository.findAll().size();
 

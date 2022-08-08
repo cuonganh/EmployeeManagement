@@ -33,5 +33,10 @@ public class PageDto <T>{
         this.result = data;
     }
 
+    public PageDto(int code, String message) {
+        this.code = code;
+        this.message = message;
+    }
+
 
 }
