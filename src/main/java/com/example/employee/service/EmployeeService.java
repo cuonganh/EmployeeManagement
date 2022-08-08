@@ -6,9 +6,11 @@ import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.dto.EmployeeDto;
 import com.example.employee.model.dto.PageDto;
 import com.example.employee.model.entity.Employee;
+import com.example.employee.model.entity.Project;
 import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.model.payload.EmployeeResponse;
 import com.example.employee.repository.EmployeeRepository;
+import com.example.employee.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,9 @@ import java.util.Optional;
 public class EmployeeService {
     @Autowired
     EmployeeRepository employeeRepository;
+
+    @Autowired
+    ProjectRepository projectRepository;
 
     @Autowired
     EntityManager entityManager;
@@ -102,10 +107,15 @@ public class EmployeeService {
         //Todo: Validate value of employeeRequest (progressing)
         employeeRequest.validateValue();
 
-        //Todo: Mapping payload to employee entity
+        //Todo: Mapping payload to employee and project entity
+        Employee employee = employeeRequest.mappingPayload(employeeRequest);
 
-        //Todo: save employee
-//        employeeRepository.save(employeeRequest);
+        //Todo: save employee, product and team information
+        employeeRepository.save(employee);
+
+        //temp
+        Project project = projectRepository.findById(1L).get();
+        projectRepository.save(project);
 
         //Todo: return response API spec
         return new EmployeeResponse<>(200, "Created employee");

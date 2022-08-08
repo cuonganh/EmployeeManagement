@@ -1,10 +1,12 @@
 package com.example.employee.model.entity;
 
+import com.example.employee.model.dto.ProjectInfo;
 import com.example.employee.model.payload.EmployeeRequest;
 import lombok.Data;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.List;
 
 @Entity(name = "employee")
 @Data
@@ -68,5 +70,9 @@ public class Employee {
 
     }
 
+
+    public void setProjects(List<ProjectInfo> projects) {
+
+    }
 
 }
