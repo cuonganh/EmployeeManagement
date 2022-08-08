@@ -12,13 +12,13 @@ public class Department {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer departmentId;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     private String name;
 
     @Column(name = "member")
     private Integer member;
 
-    @Column(name = "description", length = 2000)
+    @Column(name = "description")
     private String description;
 
     @Column(name = "leader")

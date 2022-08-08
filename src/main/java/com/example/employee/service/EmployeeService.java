@@ -2,9 +2,11 @@ package com.example.employee.service;
 
 import com.example.employee.common.Constant;
 import com.example.employee.common.converter.EmployeeDtoConverter;
+import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.dto.EmployeeDto;
 import com.example.employee.model.dto.PageDto;
 import com.example.employee.model.entity.Employee;
+import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.model.payload.EmployeeResponse;
 import com.example.employee.repository.EmployeeRepository;
 import org.slf4j.Logger;
@@ -35,19 +37,16 @@ public class EmployeeService {
 
     private final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
 
-    public EmployeeResponse<Employee> getEmployee(Long employeeId) {
+    public EmployeeResponse<List<EmployeeBean>> getEmployeeBean(EntityManager entityManager, Long employeeId) {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Get employee by id: " + employeeId);
-
-        //need join to convert value for some fields
-        Optional<Employee> employee = employeeRepository.findById(employeeId);
-        if (!employee.isPresent()) {
-            return new EmployeeResponse<>(404, "Resource not found");
+        List<EmployeeBean> employeeBeen = employeeRepository.getEmployeeBeen(entityManager, employeeId);
+        if(employeeBeen.get(0).getEmployeeId() == null) {
+            // Not found
         }
-
         LOGGER.info(Constant.END);
-        return new EmployeeResponse<>(200, "Found Employee", employee.get());
+        return new EmployeeResponse<>(200, "Found Employee", employeeBeen);
 
     }
 
@@ -83,37 +82,45 @@ public class EmployeeService {
         }
 
         pageEmployeeRequest = PageRequest.of(offset, limit, direction, sortBy.toArray(new String[0]));
-
-        List<Employee> employees = employeeRepository.getEmployees(
-                entityManager,
-                departmentId,
-                projectId,
-                limit,
-                offset,
-                sort,
-                sortBy
-        );
+        List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(entityManager);
 
         Integer countEmployees = employeeRepository.findAll().size();
 
-        Page<Employee> employeePageDtoPage = new PageImpl<>(
+        Page<EmployeeBean> employeePageDtoPage = new PageImpl<>(
                 employees,
                 pageEmployeeRequest,
                 countEmployees
         );
 
         LOGGER.info(Constant.END);
-        return this.setEmployeePageDto(employeePageDtoPage);
-
+        return new PageDto<>(employeePageDtoPage, 200, "Found employees", employees);
     }
 
 
-    private PageDto<EmployeeDto> setEmployeePageDto(Page<Employee> employeePage) {
-        List<Employee> employees = employeePage.getContent();
-        //check why employeeDto null while employees validated
-        List<EmployeeDto> employeesDto = this.employeeDtoConverter.convertToDtos(employees);
-        return new PageDto<>(employeePage, 200, "Found employees", employeesDto);
+    public EmployeeResponse<Employee> addEmployee(EmployeeRequest employeeRequest) {
+
+        //Todo: Validate value of employeeRequest (progressing)
+        employeeRequest.validateValue();
+
+        //Todo: Mapping payload to employee entity
+
+        //Todo: save employee
+//        employeeRepository.save(employeeRequest);
+
+        //Todo: return response API spec
+        return new EmployeeResponse<>(200, "Created employee");
     }
+
+    public EmployeeResponse<Employee> deleteEmployee(Long employeeId) {
+        Optional<Employee> employee = employeeRepository.findById(employeeId);
+        if(!employee.isPresent()) {
+            return new EmployeeResponse<>(404, "Employee not found");
+        }
+        employeeRepository.deleteById(employeeId);
+        return new EmployeeResponse<>(200, "Deleted employee");
+    }
+
+
 
 
 }

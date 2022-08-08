@@ -1,64 +1,54 @@
 package com.example.employee.repository;
 
+import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import org.springframework.util.CollectionUtils;
 
 import javax.persistence.EntityManager;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
-    default List<Employee> getEmployees(
-            EntityManager entityManager,
-            Long departmentId,
-            Long projectId,
-            Integer limit,
-            Integer offset,
-            String sortType,
-            List<String> sortBy
-    ){
-        StringBuilder sqlWhere = new StringBuilder();
-        Map<String, Object> params = new HashMap<>();
 
-        if(departmentId != null) {
-            sqlWhere.append(" and department_id = :departmentId");
-            params.put("departmentId", departmentId);
-        }
+    default List<EmployeeBean> getAllEmployeeBeen(EntityManager entityManager){
 
-        if(projectId != null) {
-            sqlWhere.append(" and project_id = :projectId");
-            params.put("projectId", projectId);
-        }
+        String sqlQuery = "select " +
+                " e.employee_id as employeeId, d.name as department," +
+                " e.first_name as firstName, e.last_name as lastName," +
+                " e.date_of_birth as dateOfBirth, e.address as address," +
+                " e.email as email, e.phone_number as phoneNumber," +
+                " GROUP_CONCAT(CONCAT(p.project_id,',', p.name,',', c.name,',', p.man_day) separator '|')  as projects" +
+                " from employee e " +
+                " inner join team t on t.employee_id = e.employee_id " +
+                " inner JOIN project p on p.project_id = t.project_id " +
+                " inner JOIN department d on d.department_id = e.department_id " +
+                " inner join customer c on c.customer_id = p.customer_id" +
+                " group by e.employee_id ";
+        javax.persistence.Query queryNaitive = entityManager.createNativeQuery(sqlQuery);
 
-        if(sortType != null && sortType.equalsIgnoreCase("desc")){
-            sortType = "desc";
-        }else{
-            sortType = "asc";
-        }
+        return (List<EmployeeBean>) queryNaitive.getResultStream().map(e -> new EmployeeBean(e)).collect(Collectors.toList());
+    }
 
-        if(!CollectionUtils.isEmpty(sortBy)){
-            sqlWhere.append(" order by ");
-            for(int i = 0; i < sortBy.size(); i++){
-                if(i!= 0){
-                    sqlWhere.append(", ");
-                }
-                sqlWhere.append(sortBy.get(i)).append(" ").append(sortType);
-            }
-        }
+    default List<EmployeeBean> getEmployeeBeen(EntityManager entityManager, Long employeeId){
 
-        String sqlQuery = "select ee from employee ee where 1=1 " + sqlWhere;
+        String sqlQuery = "select " +
+                " e.employee_id as employeeId, d.name as department," +
+                " e.first_name as firstName, e.last_name as lastName," +
+                " e.date_of_birth as dateOfBirth, e.address as address," +
+                " e.email as email, e.phone_number as phoneNumber," +
+                " GROUP_CONCAT(CONCAT(p.project_id,',', p.name,',', c.name,',', p.man_day) separator '|')  as projects" +
+                " from employee e " +
+                " inner join team t on t.employee_id = e.employee_id " +
+                " inner JOIN project p on p.project_id = t.project_id " +
+                " inner JOIN department d on d.department_id = e.department_id " +
+                " inner join customer c on c.customer_id = p.customer_id" +
+                " where e.employee_id = " + employeeId;
+        javax.persistence.Query queryNaitive = entityManager.createNativeQuery(sqlQuery);
 
-        javax.persistence.Query query = entityManager.createQuery(sqlQuery, Employee.class);
-        query.setMaxResults(limit);
-        query.setFirstResult(offset);
-        params.forEach(query::setParameter);
-
-        return query.getResultList();
+        return (List<EmployeeBean>) queryNaitive.getResultStream().map(e -> new EmployeeBean(e)).collect(Collectors.toList());
     }
 
 }

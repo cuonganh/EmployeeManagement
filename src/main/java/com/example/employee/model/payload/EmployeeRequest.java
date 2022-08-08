@@ -25,4 +25,8 @@ public class EmployeeRequest {
 
     private String phoneNumber;
 
+    public void validateValue() {
+        // Validate the value of all fields
+
+    }
 }

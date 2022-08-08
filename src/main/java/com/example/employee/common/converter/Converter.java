@@ -11,11 +11,19 @@ public interface Converter<E, D> {
     E convertToEntity(D dto);
 
     default List<D> convertToDtos(final Collection<E> entities){
-        return entities.stream().map(this::convertToDto).collect(Collectors.toList());
+        return entities
+                .stream()
+                .map(entity -> convertToDto(entity))
+                .collect(Collectors.toList()
+        );
     }
 
     default List<E> convertToEntities(final Collection<D> dtos){
-        return dtos.stream().map(this::convertToEntity).collect(Collectors.toList());
+        return dtos
+                .stream()
+                .map(dto -> convertToEntity(dto))
+                .collect(Collectors.toList()
+        );
     }
 
 }

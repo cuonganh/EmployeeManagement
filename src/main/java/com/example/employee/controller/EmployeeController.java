@@ -1,13 +1,12 @@
 package com.example.employee.controller;
 
+import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import javax.persistence.EntityManager;
 import java.util.List;
 
 @RestController
@@ -16,9 +15,13 @@ public class EmployeeController {
     @Autowired
     EmployeeService employeeService;
 
+    @Autowired
+    EntityManager entityManager;
+
     @GetMapping("/{employeeId}")
     public ResponseEntity<?> getEmployee(@PathVariable("employeeId") Long employeeId) {
-        return ResponseEntity.ok(employeeService.getEmployee(employeeId));
+        //need join other table to convert value
+        return ResponseEntity.ok(employeeService.getEmployeeBean(entityManager, employeeId));
     }
 
     @GetMapping("")
@@ -41,5 +44,19 @@ public class EmployeeController {
         );
 
     }
+
+    @PostMapping
+    public ResponseEntity<?> addEmployee(@RequestBody EmployeeRequest employeeRequest) {
+
+        return ResponseEntity.ok(employeeService.addEmployee(employeeRequest));
+    }
+
+
+    @DeleteMapping("/{employeeId}")
+    public ResponseEntity<?> deleteEmployee(@PathVariable("employeeId") Long employeeId) {
+        //need join other table to convert value
+        return ResponseEntity.ok(employeeService.deleteEmployee(employeeId));
+    }
+
 
 }

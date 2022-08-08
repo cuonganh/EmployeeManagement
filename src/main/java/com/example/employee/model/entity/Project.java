@@ -11,19 +11,18 @@ public class Project {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "project_id", nullable = false)
     private Integer projectId;
 
-    @Column(name = "customer_id", nullable = false)
+    @Column(name = "customer_id")
     private Integer customerId;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     private String name;
 
-    @Column(name = "priority_level", nullable = false)
+    @Column(name = "priority_level")
     private Integer priorityLevel;
 
-    @Column(name = "man_day", nullable = false)
+    @Column(name = "man_day")
     private Integer manDay;
 
 }
