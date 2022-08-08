@@ -36,8 +36,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             EntityManager entityManager,
             Long departmentId,
             Long projectId,
-            Integer offset,
-            Integer limit,
             String sortType,
             List<String> sortBy
     ){
@@ -77,8 +75,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
                 sqlOrder.append(sortBy.get(i) + " " + sortType);
             }
         }
-        sqlOrder.append(" limit " + limit);
-        sqlOrder.append(" offset " + offset);
 
         String sqlQuery = sqlJoin + sqlWhere + sqlOrder;
         System.out.println(sqlQuery);
