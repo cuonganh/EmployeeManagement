@@ -2,15 +2,11 @@ package com.example.employee.repository;
 
 import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.entity.Employee;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import org.springframework.util.CollectionUtils;
 
 import javax.persistence.EntityManager;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Repository
