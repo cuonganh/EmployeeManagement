@@ -20,7 +20,6 @@ public class EmployeeController {
 
     @GetMapping("/{employeeId}")
     public ResponseEntity<?> getEmployee(@PathVariable("employeeId") Long employeeId) {
-        //need join other table to convert value
         return ResponseEntity.ok(employeeService.getEmployeeBean(entityManager, employeeId));
     }
 

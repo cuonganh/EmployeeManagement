@@ -43,7 +43,7 @@ public class EmployeeService {
         LOGGER.info("Get employee by id: " + employeeId);
         List<EmployeeBean> employeeBeen = employeeRepository.getEmployeeBeen(entityManager, employeeId);
         if(employeeBeen.get(0).getEmployeeId() == null) {
-            // Not found
+            return new EmployeeResponse<>(404, "Resource not found");
         }
         LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Found Employee", employeeBeen);
@@ -78,11 +78,11 @@ public class EmployeeService {
         }
         if(CollectionUtils.isEmpty(sortBy)){
             sortBy = new ArrayList<>();
-            sortBy.add("departmentId");
+            sortBy.add("employeeId");
         }
 
         pageEmployeeRequest = PageRequest.of(offset, limit, direction, sortBy.toArray(new String[0]));
-        List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(entityManager);
+        List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(entityManager, departmentId, projectId, sort, sortBy);
 
         Integer countEmployees = employeeRepository.findAll().size();
 
