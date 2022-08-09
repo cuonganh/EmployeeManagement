@@ -1,10 +1,12 @@
 package com.example.employee.model.entity;
 
+import com.example.employee.model.dto.ProjectInfo;
 import com.example.employee.model.payload.EmployeeRequest;
 import lombok.Data;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.List;
 
 @Entity(name = "employee")
 @Data
@@ -36,7 +38,21 @@ public class Employee {
     private String phoneNumber;
 
 
-    public Employee getUpdateEmployee(EmployeeRequest employeeRequest, long projectId){
+    public Employee getCreateEmployee(EmployeeRequest employeeRequest, long departmentId, long projectId) {
+
+        this.departmentId = employeeRequest.getDepartmentId();
+        this.firstName = employeeRequest.getFirstName();
+        this.lastName = employeeRequest.getLastName();
+        this.dateOfBirth = employeeRequest.getDateOfBirth();
+        this.address = employeeRequest.getAddress();
+        this.email = employeeRequest.getEmail();
+        this.phoneNumber = employeeRequest.getPhoneNumber();
+
+        return this;
+
+    }
+
+    public void getUpdateEmployee(EmployeeRequest employeeRequest, long departmentId, long projectId){
 
         if(employeeRequest.getDepartmentId() != null) this.departmentId = employeeRequest.getDepartmentId();
 
@@ -52,9 +68,11 @@ public class Employee {
 
         if(employeeRequest.getPhoneNumber()!=null) this.phoneNumber = employeeRequest.getPhoneNumber();
 
-        return this;
     }
 
 
+    public void setProjects(List<ProjectInfo> projects) {
+
+    }
 
 }

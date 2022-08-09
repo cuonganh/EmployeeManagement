@@ -7,6 +7,7 @@ import com.example.employee.model.dto.EmployeeDto;
 import com.example.employee.model.dto.PageDto;
 import com.example.employee.model.dto.ProjectInfo;
 import com.example.employee.model.entity.Employee;
+import com.example.employee.model.entity.Project;
 import com.example.employee.model.entity.Team;
 import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.model.payload.EmployeeResponse;
@@ -133,31 +134,6 @@ public class EmployeeService {
         return new EmployeeResponse<>(200, "Created employee");
     }
 
-    @Transactional
-    public EmployeeResponse<Employee> updateEmployee(EmployeeRequest employeeRequest, Long employeeId) {
-        Optional<Employee> employeeOptional = employeeRepository.findById(employeeId);
-        if(!employeeOptional.isPresent()) {
-            throw new IllegalArgumentException("Employee within employeeId " + employeeId + " is not available");
-        }
-        Employee employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest, employeeId);
-        employeeRepository.save(employeeNew);
-
-        List<ProjectInfo> projects = employeeRequest.getProjects();
-        if(projects.size() > 0) {
-            for(ProjectInfo projectInfo : projects) {
-                Long projectId = projectInfo.getProjectId();
-                Optional<Team> teamOld = teamRepository.findByEmployeeIdAndProjectId(employeeId, projectId);
-                if(!teamOld.isPresent()) {
-                    Team teamNew = new Team();
-                    teamNew.setEmployeeId(employeeId);
-                    teamNew.setProjectId(projectId);
-                    teamRepository.save(teamNew);
-                }
-            }
-        }
-        return new EmployeeResponse<>(200, "Updated employee");
-    }
-
     public EmployeeResponse<Employee> deleteEmployee(Long employeeId) {
         Optional<Employee> employee = employeeRepository.findById(employeeId);
         if(!employee.isPresent()) {
@@ -166,6 +142,8 @@ public class EmployeeService {
         employeeRepository.deleteById(employeeId);
         return new EmployeeResponse<>(200, "Deleted employee");
     }
+
+
 
 
 }

@@ -39,6 +39,7 @@ public class EmployeeRequest {
             if(employeeRequest.getAddress()!=null) employee.setAddress(address);
             if(employeeRequest.getEmail()!=null) employee.setEmail(email);
             if(employeeRequest.getPhoneNumber()!=null) employee.setPhoneNumber(phoneNumber);
+            if(employeeRequest.getProjects()!=null) employee.setProjects(projects);
             return employee;
         }catch (Exception e) {
             throw new RuntimeException(e);
