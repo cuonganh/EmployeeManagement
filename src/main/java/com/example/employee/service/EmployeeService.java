@@ -6,8 +6,8 @@ import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.dto.EmployeeDto;
 import com.example.employee.model.dto.PageDto;
 import com.example.employee.model.dto.ProjectInfo;
-import com.example.employee.model.entity.Employee;
-import com.example.employee.model.entity.Team;
+import com.example.employee.model.entity.Employees;
+import com.example.employee.model.entity.Teams;
 import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.model.payload.EmployeeResponse;
 import com.example.employee.repository.EmployeeRepository;
@@ -107,21 +107,21 @@ public class EmployeeService {
 
 
     @Transactional
-    public EmployeeResponse<Employee> createEmployee(EmployeeRequest employeeRequest) {
+    public EmployeeResponse<Employees> createEmployee(EmployeeRequest employeeRequest) {
         String email = employeeRequest.getEmail();
         List<ProjectInfo> projects = employeeRequest.getProjects();
-        Optional<Employee> employee = employeeRepository.findByEmail(email);
+        Optional<Employees> employee = employeeRepository.findByEmail(email);
         if(employee.isPresent()) {
             return new EmployeeResponse<>(400, "Bad request. Employee's email is already in use");
         }
-        Employee employeeNew = employeeRequest.convertToEmployeeEntity(employeeRequest);
+        Employees employeeNew = employeeRequest.convertToEmployeeEntity(employeeRequest);
         employeeRepository.save(employeeNew);
         Long employeeId = employeeNew.getEmployeeId();
         if(projects.size() > 0) {
             for(ProjectInfo projectInfo : projects) {
                 try{
                     Long projectId = projectInfo.getProjectId();
-                    Team newTeam = new Team();
+                    Teams newTeam = new Teams();
                     newTeam.setEmployeeId(employeeId);
                     newTeam.setProjectId(projectId);
                     teamRepository.save(newTeam);
@@ -134,21 +134,21 @@ public class EmployeeService {
     }
 
     @Transactional
-    public EmployeeResponse<Employee> updateEmployee(EmployeeRequest employeeRequest, Long employeeId) {
-        Optional<Employee> employeeOptional = employeeRepository.findById(employeeId);
+    public EmployeeResponse<Employees> updateEmployee(EmployeeRequest employeeRequest, Long employeeId) {
+        Optional<Employees> employeeOptional = employeeRepository.findById(employeeId);
         if(!employeeOptional.isPresent()) {
             return new EmployeeResponse<>(404, "Employee with employeeId " + employeeId + " is not available");
         }
-        Employee employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest, employeeId);
+        Employees employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest, employeeId);
         employeeRepository.save(employeeNew);
 
         List<ProjectInfo> projects = employeeRequest.getProjects();
         if(projects.size() > 0) {
             for(ProjectInfo projectInfo : projects) {
                 Long projectId = projectInfo.getProjectId();
-                Optional<Team> teamOld = teamRepository.findByEmployeeIdAndProjectId(employeeId, projectId);
+                Optional<Teams> teamOld = teamRepository.findByEmployeeIdAndProjectId(employeeId, projectId);
                 if(!teamOld.isPresent()) {
-                    Team teamNew = new Team();
+                    Teams teamNew = new Teams();
                     teamNew.setEmployeeId(employeeId);
                     teamNew.setProjectId(projectId);
                     teamRepository.save(teamNew);
@@ -158,8 +158,8 @@ public class EmployeeService {
         return new EmployeeResponse<>(200, "Updated employee");
     }
 
-    public EmployeeResponse<Employee> deleteEmployee(Long employeeId) {
-        Optional<Employee> employee = employeeRepository.findById(employeeId);
+    public EmployeeResponse<Employees> deleteEmployee(Long employeeId) {
+        Optional<Employees> employee = employeeRepository.findById(employeeId);
         if(!employee.isPresent()) {
             return new EmployeeResponse<>(404, "Employee not found");
         }

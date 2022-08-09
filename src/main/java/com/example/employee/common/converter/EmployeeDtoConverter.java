@@ -1,19 +1,19 @@
 package com.example.employee.common.converter;
 
 import com.example.employee.model.dto.EmployeeDto;
-import com.example.employee.model.entity.Employee;
+import com.example.employee.model.entity.Employees;
 import org.springframework.stereotype.Component;
 
 @Component
-public class EmployeeDtoConverter implements Converter<Employee, EmployeeDto>{
+public class EmployeeDtoConverter implements Converter<Employees, EmployeeDto>{
 
     @Override
-    public Employee convertToEntity(EmployeeDto dto){
+    public Employees convertToEntity(EmployeeDto dto){
         return null;
     }
 
     @Override
-    public EmployeeDto convertToDto(Employee entity) {
+    public EmployeeDto convertToDto(Employees entity) {
 
         EmployeeDto employeeDto = new EmployeeDto();
 

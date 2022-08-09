@@ -1,10 +1,10 @@
 package com.example.employee.repository;
 
-import com.example.employee.model.entity.Project;
+import com.example.employee.model.entity.Projects;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ProjectRepository extends JpaRepository<Project, Long> {
+public interface ProjectRepository extends JpaRepository<Projects, Long> {
     //
 }

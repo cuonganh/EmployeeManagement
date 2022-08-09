@@ -1,7 +1,7 @@
 package com.example.employee.repository;
 
 import com.example.employee.model.dto.EmployeeBean;
-import com.example.employee.model.entity.Employee;
+import com.example.employee.model.entity.Employees;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Repository
-public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+public interface EmployeeRepository extends JpaRepository<Employees, Long> {
 
 
     default List<EmployeeBean> getEmployeeBeen(EntityManager entityManager, Long employeeId){
@@ -84,6 +84,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
         return (List<EmployeeBean>) queryNative.getResultStream().map(e -> new EmployeeBean(e)).collect(Collectors.toList());
     }
 
-    Optional<Employee> findByEmail(String email);
+    Optional<Employees> findByEmail(String email);
 
 }
