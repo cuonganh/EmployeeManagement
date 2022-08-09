@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Repository
@@ -82,5 +83,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
         return (List<EmployeeBean>) queryNative.getResultStream().map(e -> new EmployeeBean(e)).collect(Collectors.toList());
     }
+
+    Optional<Employee> findByEmail(String email);
 
 }

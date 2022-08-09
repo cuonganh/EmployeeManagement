@@ -12,7 +12,7 @@ public class PageDto <T>{
     private String message;
     private int limit;
     private int offset;
-    private long total;
+    private int total;
     private List<?> result;
 
     public PageDto(int code, String message, int limit, int offset, int total, List<?> data) {

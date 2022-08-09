@@ -11,18 +11,18 @@ public class Project {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer projectId;
+    private Long projectId;
 
     @Column(name = "customer_id")
-    private Integer customerId;
+    private Long customerId;
 
     @Column(name = "name")
     private String name;
 
     @Column(name = "priority_level")
-    private Integer priorityLevel;
+    private String priorityLevel;
 
     @Column(name = "man_day")
-    private Integer manDay;
+    private Long manDay;
 
 }

@@ -19,7 +19,6 @@ public class EmployeeDtoConverter implements Converter<Employee, EmployeeDto>{
 
         employeeDto.setEmployeeId(employeeDto.getEmployeeId());
         employeeDto.setDepartmentId(employeeDto.getDepartmentId());
-        employeeDto.setProjectId(employeeDto.getProjectId());
         employeeDto.setFirstName(employeeDto.getFirstName());
         employeeDto.setDateOfBirth(employeeDto.getDateOfBirth());
         employeeDto.setLastName(employeeDto.getLastName());

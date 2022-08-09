@@ -11,8 +11,6 @@ public class EmployeeDto {
 
     private Long departmentId;
 
-    private Long projectId;
-
     private String firstName;
 
     private String lastName;

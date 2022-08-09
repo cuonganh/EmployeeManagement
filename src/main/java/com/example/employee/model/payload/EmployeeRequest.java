@@ -28,22 +28,22 @@ public class EmployeeRequest {
 
     private String phoneNumber;
 
-    public void validateValue() {
-        // Validate the value of all fields
 
-    }
-
-    public Employee mappingPayload(EmployeeRequest employeeRequest) {
-        Employee employee = new Employee();
-        if(employeeRequest.getDepartmentId()!=null) employee.setDepartmentId(departmentId);
-        if(employeeRequest.getFirstName()!=null) employee.setFirstName(firstName);
-        if(employeeRequest.getLastName()!=null) employee.setLastName(lastName);
-        if(employeeRequest.getDateOfBirth()!=null) employee.setDateOfBirth(dateOfBirth);
-        if(employeeRequest.getAddress()!=null) employee.setAddress(address);
-        if(employeeRequest.getEmail()!=null) employee.setEmail(email);
-        if(employeeRequest.getPhoneNumber()!=null) employee.setPhoneNumber(phoneNumber);
-        if(employeeRequest.getProjects()!=null) employee.setProjects(projects);
-        return employee;
+    public Employee convertToEmployeeEntity(EmployeeRequest employeeRequest) {
+        try{
+            Employee employee = new Employee();
+            if(employeeRequest.getDepartmentId()!=null) employee.setDepartmentId(departmentId);
+            if(employeeRequest.getFirstName()!=null) employee.setFirstName(firstName);
+            if(employeeRequest.getLastName()!=null) employee.setLastName(lastName);
+            if(employeeRequest.getDateOfBirth()!=null) employee.setDateOfBirth(dateOfBirth);
+            if(employeeRequest.getAddress()!=null) employee.setAddress(address);
+            if(employeeRequest.getEmail()!=null) employee.setEmail(email);
+            if(employeeRequest.getPhoneNumber()!=null) employee.setPhoneNumber(phoneNumber);
+            if(employeeRequest.getProjects()!=null) employee.setProjects(projects);
+            return employee;
+        }catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

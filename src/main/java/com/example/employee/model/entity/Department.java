@@ -10,13 +10,13 @@ public class Department {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer departmentId;
+    private Long departmentId;
 
     @Column(name = "name")
     private String name;
 
     @Column(name = "member")
-    private Integer member;
+    private Long member;
 
     @Column(name = "description")
     private String description;
