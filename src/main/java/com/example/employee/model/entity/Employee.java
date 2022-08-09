@@ -36,21 +36,7 @@ public class Employee {
     private String phoneNumber;
 
 
-    public Employee getCreateEmployee(EmployeeRequest employeeRequest, long departmentId, long projectId) {
-
-        this.departmentId = employeeRequest.getDepartmentId();
-        this.firstName = employeeRequest.getFirstName();
-        this.lastName = employeeRequest.getLastName();
-        this.dateOfBirth = employeeRequest.getDateOfBirth();
-        this.address = employeeRequest.getAddress();
-        this.email = employeeRequest.getEmail();
-        this.phoneNumber = employeeRequest.getPhoneNumber();
-
-        return this;
-
-    }
-
-    public void getUpdateEmployee(EmployeeRequest employeeRequest, long departmentId, long projectId){
+    public Employee getUpdateEmployee(EmployeeRequest employeeRequest, long projectId){
 
         if(employeeRequest.getDepartmentId() != null) this.departmentId = employeeRequest.getDepartmentId();
 
@@ -66,7 +52,9 @@ public class Employee {
 
         if(employeeRequest.getPhoneNumber()!=null) this.phoneNumber = employeeRequest.getPhoneNumber();
 
+        return this;
     }
+
 
 
 }
