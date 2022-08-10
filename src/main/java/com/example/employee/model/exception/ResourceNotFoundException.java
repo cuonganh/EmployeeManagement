@@ -11,17 +11,17 @@ public class ResourceNotFoundException extends Exception {
     private final int code;
     private final String message;
 
-    ResourceNotFoundException(){
+    public ResourceNotFoundException(){
         this.code = 404;
         this.message = Constant.MESSAGE_NOT_FOUND;
     }
 
-    ResourceNotFoundException(String message){
+    public ResourceNotFoundException(String message){
         this.code = 404;
         this.message = message;
     }
 
-    ResourceNotFoundException(int code, String message) {
+    public ResourceNotFoundException(int code, String message) {
         this.code = code;
         this.message = message;
     }

@@ -1,5 +1,6 @@
 package com.example.employee.controller;
 
+import com.example.employee.model.exception.ResourceNotFoundException;
 import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.repository.EmployeeRepository;
 import com.example.employee.service.EmployeeService;
@@ -23,7 +24,9 @@ public class EmployeeController {
     EntityManager entityManager;
 
     @GetMapping("/{employeeId}")
-    public ResponseEntity<?> getEmployee(@PathVariable("employeeId") Long employeeId) {
+    public ResponseEntity<?> getEmployee(
+            @PathVariable("employeeId") Long employeeId)
+            throws ResourceNotFoundException {
         return ResponseEntity.ok(employeeService.getEmployeeBean(entityManager, employeeId));
     }
 
@@ -36,7 +39,8 @@ public class EmployeeController {
             @RequestParam(value = "sort", required = false) String sort,
             @RequestParam(value = "sortBy", required = false) List<String> sortBy
     ) {
-        return ResponseEntity.ok(employeeService.getEmployees(
+        return ResponseEntity.ok(
+                employeeService.getEmployees(
                 departmentId,
                 projectId,
                 limit,
@@ -49,22 +53,23 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createEmployee(@RequestBody EmployeeRequest employeeRequest) {
-
+    public ResponseEntity<?> createEmployee(
+            @RequestBody EmployeeRequest employeeRequest) {
         return ResponseEntity.ok(employeeService.createEmployee(employeeRequest));
     }
 
     @PatchMapping(value = "/{employeeId}")
     public ResponseEntity<?> updateEmployee(
             @PathVariable("employeeId") Long employeeId,
-            @RequestBody EmployeeRequest employeeRequest) throws Exception {
+            @RequestBody EmployeeRequest employeeRequest) {
         return ResponseEntity.ok(employeeService.updateEmployee(employeeRequest, employeeId));
     }
 
 
     @DeleteMapping("/{employeeId}")
-    public ResponseEntity<?> deleteEmployee(@PathVariable("employeeId") Long employeeId) {
-        //need join other table to convert value
+    public ResponseEntity<?> deleteEmployee(
+            @PathVariable("employeeId") Long employeeId)
+            throws ResourceNotFoundException {
         return ResponseEntity.ok(employeeService.deleteEmployee(employeeId));
     }
 

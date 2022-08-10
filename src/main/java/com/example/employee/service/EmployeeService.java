@@ -8,6 +8,8 @@ import com.example.employee.model.dto.PageDto;
 import com.example.employee.model.dto.ProjectInfo;
 import com.example.employee.model.entity.Employees;
 import com.example.employee.model.entity.Teams;
+import com.example.employee.model.exception.ResourceNotFoundException;
+import com.example.employee.model.exception.ValidationException;
 import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.model.payload.EmployeeResponse;
 import com.example.employee.repository.EmployeeRepository;
@@ -28,6 +30,8 @@ import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class EmployeeService {
@@ -46,15 +50,20 @@ public class EmployeeService {
     @Autowired
     EmployeeDtoConverter employeeDtoConverter;
 
+    private final String REGEX_EMAIL =
+            "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])";
+
+    private final String REGEX_DATEOFBIRTH = "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$";
+
     private final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
 
-    public EmployeeResponse<List<EmployeeBean>> getEmployeeBean(EntityManager entityManager, Long employeeId) {
+    public EmployeeResponse<List<EmployeeBean>> getEmployeeBean(EntityManager entityManager, Long employeeId) throws ResourceNotFoundException {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Get employee by id: " + employeeId);
         List<EmployeeBean> employeeBeen = employeeRepository.getEmployeeBeen(entityManager, employeeId);
         if(employeeBeen.get(0).getEmployeeId() == null) {
-            return new EmployeeResponse<>(404, "Resource not found");
+            throw new ResourceNotFoundException();
         }
         LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Found Employee", employeeBeen);
@@ -71,7 +80,6 @@ public class EmployeeService {
     ) {
         LOGGER.info(Constant.START);
         LOGGER.info("Get employees list");
-        PageRequest pageEmployeeRequest;
         Sort.Direction direction = Sort.Direction.DESC;
 
         if(limit == null){
@@ -90,29 +98,33 @@ public class EmployeeService {
             sortBy.add("employeeId");
         }
 
-        pageEmployeeRequest = PageRequest.of(offset, limit, direction, sortBy.toArray(new String[0]));
-        List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(entityManager, departmentId, projectId, sort, sortBy);
-
-        Integer countEmployees = employeeRepository.findAll().size();
-
-        Page<EmployeeBean> employeePageDtoPage = new PageImpl<>(
-                employees,
-                pageEmployeeRequest,
-                countEmployees
+        List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
+                entityManager,
+                departmentId,
+                projectId,
+                limit,
+                offset,
+                sort,
+                sortBy
         );
-
+        Long total =employeeRepository.countByCondition(entityManager, departmentId, projectId);
         LOGGER.info(Constant.END);
-        return new PageDto<>(employeePageDtoPage, 200, "Found employees", employees);
+        return new PageDto<>(200, "Found employees", limit, offset, total, employees);
     }
 
 
     @Transactional
     public EmployeeResponse<Employees> createEmployee(EmployeeRequest employeeRequest) {
+        LOGGER.info(Constant.START);
+        LOGGER.info("Create employee" + employeeRequest);
         String email = employeeRequest.getEmail();
+        if(!checkRegex(REGEX_EMAIL, email)) {
+            return new EmployeeResponse<>(400,"Email is invalid");
+        }
         List<ProjectInfo> projects = employeeRequest.getProjects();
         Optional<Employees> employee = employeeRepository.findByEmail(email);
         if(employee.isPresent()) {
-            return new EmployeeResponse<>(400, "Bad request. Employee's email is already in use");
+            return new EmployeeResponse<>(400,"Bad request. Email is already in use");
         }
         Employees employeeNew = employeeRequest.convertToEmployeeEntity(employeeRequest);
         employeeRepository.save(employeeNew);
@@ -130,14 +142,28 @@ public class EmployeeService {
                 }
             }
         }
+        LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Created employee");
+    }
+
+    private boolean checkRegex(String regex, String value) {
+        boolean result = false;
+        Pattern regexGMT = Pattern.compile(regex);
+        Matcher matchFoundGMT = regexGMT.matcher(value);
+        // isDate
+        if (matchFoundGMT.find()) {
+            result = true;
+        }
+        return result;
     }
 
     @Transactional
     public EmployeeResponse<Employees> updateEmployee(EmployeeRequest employeeRequest, Long employeeId) {
+        LOGGER.info(Constant.START);
+        LOGGER.info("Update employee " + employeeId);
         Optional<Employees> employeeOptional = employeeRepository.findById(employeeId);
         if(!employeeOptional.isPresent()) {
-            return new EmployeeResponse<>(404, "Employee with employeeId " + employeeId + " is not available");
+            return new EmployeeResponse<>(404,"Employee with id " + employeeId + " does not exist");
         }
         Employees employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest, employeeId);
         employeeRepository.save(employeeNew);
@@ -155,15 +181,19 @@ public class EmployeeService {
                 }
             }
         }
+        LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Updated employee");
     }
 
-    public EmployeeResponse<Employees> deleteEmployee(Long employeeId) {
+    public EmployeeResponse<Employees> deleteEmployee(Long employeeId) throws ResourceNotFoundException{
+        LOGGER.info(Constant.START);
+        LOGGER.info("Delete employee " + employeeId);
         Optional<Employees> employee = employeeRepository.findById(employeeId);
         if(!employee.isPresent()) {
-            return new EmployeeResponse<>(404, "Employee not found");
+            throw new ResourceNotFoundException();
         }
         employeeRepository.deleteById(employeeId);
+        LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Deleted employee");
     }
 

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,6 +38,8 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long> {
             EntityManager entityManager,
             Long departmentId,
             Long projectId,
+            Integer limit,
+            Integer offset,
             String sortType,
             List<String> sortBy
     ){
@@ -76,9 +79,10 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long> {
                 sqlOrder.append(sortBy.get(i) + " " + sortType);
             }
         }
+        sqlOrder.append(" limit ").append(limit);
+        sqlOrder.append(" offset ").append(offset);
 
         String sqlQuery = sqlJoin + sqlWhere + sqlOrder;
-        System.out.println(sqlQuery);
         javax.persistence.Query queryNative = entityManager.createNativeQuery(sqlQuery);
 
         return (List<EmployeeBean>) queryNative.getResultStream().map(e -> new EmployeeBean(e)).collect(Collectors.toList());
@@ -86,4 +90,26 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long> {
 
     Optional<Employees> findByEmail(String email);
 
+    default Long countByCondition(EntityManager entityManager, Long departmentId, Long projectId){
+
+        String sql = "select count(distinct e.employee_id) from employee e";
+        StringBuilder sqlJoin = new StringBuilder();
+        StringBuilder sqlWhere = new StringBuilder(" where 1 = 1 ");
+
+        if(departmentId != null){
+            sqlJoin.append(" left join department d on e.department_id = d.department_id ");
+            sqlWhere.append(" and e.department_id = " + departmentId);
+        }
+        if(projectId != null){
+            sqlJoin.append(" left join team t on e.employee_id = t.employee_id ");
+            sqlWhere.append(" and t.project_id = " + projectId);
+        }
+
+        String sqlQuery = sql + sqlJoin + sqlWhere;
+        javax.persistence.Query sqlNative = entityManager.createNativeQuery(sqlQuery);
+
+        BigInteger total = (BigInteger) sqlNative.getSingleResult();
+
+        return total.longValue();
+    }
 }
