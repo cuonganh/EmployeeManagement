@@ -2,6 +2,7 @@ package com.example.employee.service;
 
 import com.example.employee.common.Constant;
 import com.example.employee.common.converter.EmployeeDtoConverter;
+import com.example.employee.helper.CSVHelper;
 import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.dto.EmployeeDto;
 import com.example.employee.model.dto.PageDto;
@@ -20,9 +21,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -194,6 +197,24 @@ public class EmployeeService {
         employeeRepository.deleteById(employeeId);
         LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Deleted employee");
+    }
+
+
+    public EmployeeResponse<Employees> importEmployees(MultipartFile file) {
+
+        try {
+            List<Employees> employees = CSVHelper.csvToEmployees(file.getInputStream());
+            employeeRepository.saveAll(employees);
+        } catch (IOException e) {
+            throw new RuntimeException("Fail to store csv data: " + e.getMessage());
+        }
+
+        LOGGER.info(Constant.END);
+        return new EmployeeResponse<>(200, "Imported employees");
+    }
+
+    public List<Employees> getAllEmployees() {
+        return employeeRepository.findAll();
     }
 
 
