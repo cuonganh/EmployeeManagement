@@ -9,7 +9,6 @@ import com.example.employee.model.dto.ProjectInfo;
 import com.example.employee.model.entity.Employees;
 import com.example.employee.model.entity.Teams;
 import com.example.employee.model.exception.ResourceNotFoundException;
-import com.example.employee.model.exception.ValidationException;
 import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.model.payload.EmployeeResponse;
 import com.example.employee.repository.EmployeeRepository;
@@ -18,9 +17,6 @@ import com.example.employee.repository.TeamRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -57,7 +53,10 @@ public class EmployeeService {
 
     private final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
 
-    public EmployeeResponse<List<EmployeeBean>> getEmployeeBean(EntityManager entityManager, Long employeeId) throws ResourceNotFoundException {
+    public EmployeeResponse<List<EmployeeBean>> getEmployeeBean(
+            EntityManager entityManager,
+            Long employeeId
+    ) throws ResourceNotFoundException {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Get employee by id: " + employeeId);
@@ -190,7 +189,7 @@ public class EmployeeService {
         LOGGER.info("Delete employee " + employeeId);
         Optional<Employees> employee = employeeRepository.findById(employeeId);
         if(!employee.isPresent()) {
-            throw new ResourceNotFoundException();
+            return new EmployeeResponse<>(404, "Resource not found");
         }
         employeeRepository.deleteById(employeeId);
         LOGGER.info(Constant.END);
