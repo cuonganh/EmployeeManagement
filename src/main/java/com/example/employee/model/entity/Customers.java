@@ -6,7 +6,7 @@ import javax.persistence.*;
 
 @Entity(name = "customer")
 @Data
-public class Customer {
+public class Customers {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

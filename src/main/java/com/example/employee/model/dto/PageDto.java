@@ -12,10 +12,10 @@ public class PageDto <T>{
     private String message;
     private int limit;
     private int offset;
-    private int total;
+    private long total;
     private List<?> result;
 
-    public PageDto(int code, String message, int limit, int offset, int total, List<?> data) {
+    public PageDto(int code, String message, int limit, int offset, long total, List<?> data) {
         this.code = code;
         this.message = message;
         this.limit = limit;
@@ -24,12 +24,12 @@ public class PageDto <T>{
         this.result = data;
     }
 
-    public PageDto(Page page, int code, String message, List<?> data) {
+    public PageDto(Page page, int code, String message, List<?> data, long total) {
         this.code = code;
         this.message = message;
         this.limit = page.getSize();
         this.offset = page.getNumber();
-        this.total = page.getNumberOfElements();
+        this.total = total;
         this.result = data;
     }
 

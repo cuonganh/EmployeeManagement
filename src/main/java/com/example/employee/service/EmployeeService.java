@@ -6,8 +6,9 @@ import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.dto.EmployeeDto;
 import com.example.employee.model.dto.PageDto;
 import com.example.employee.model.dto.ProjectInfo;
-import com.example.employee.model.entity.Employee;
-import com.example.employee.model.entity.Team;
+import com.example.employee.model.entity.Employees;
+import com.example.employee.model.entity.Teams;
+import com.example.employee.model.exception.ResourceNotFoundException;
 import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.model.payload.EmployeeResponse;
 import com.example.employee.repository.EmployeeRepository;
@@ -16,9 +17,6 @@ import com.example.employee.repository.TeamRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -28,6 +26,8 @@ import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class EmployeeService {
@@ -46,15 +46,23 @@ public class EmployeeService {
     @Autowired
     EmployeeDtoConverter employeeDtoConverter;
 
+    private final String REGEX_EMAIL =
+            "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])";
+
+    private final String REGEX_DATEOFBIRTH = "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$";
+
     private final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
 
-    public EmployeeResponse<List<EmployeeBean>> getEmployeeBean(EntityManager entityManager, Long employeeId) {
+    public EmployeeResponse<List<EmployeeBean>> getEmployeeBean(
+            EntityManager entityManager,
+            Long employeeId
+    ) throws ResourceNotFoundException {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Get employee by id: " + employeeId);
         List<EmployeeBean> employeeBeen = employeeRepository.getEmployeeBeen(entityManager, employeeId);
         if(employeeBeen.get(0).getEmployeeId() == null) {
-            return new EmployeeResponse<>(404, "Resource not found");
+            throw new ResourceNotFoundException();
         }
         LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Found Employee", employeeBeen);
@@ -71,7 +79,6 @@ public class EmployeeService {
     ) {
         LOGGER.info(Constant.START);
         LOGGER.info("Get employees list");
-        PageRequest pageEmployeeRequest;
         Sort.Direction direction = Sort.Direction.DESC;
 
         if(limit == null){
@@ -90,38 +97,42 @@ public class EmployeeService {
             sortBy.add("employeeId");
         }
 
-        pageEmployeeRequest = PageRequest.of(offset, limit, direction, sortBy.toArray(new String[0]));
-        List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(entityManager, departmentId, projectId, sort, sortBy);
-
-        Integer countEmployees = employeeRepository.findAll().size();
-
-        Page<EmployeeBean> employeePageDtoPage = new PageImpl<>(
-                employees,
-                pageEmployeeRequest,
-                countEmployees
+        List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
+                entityManager,
+                departmentId,
+                projectId,
+                limit,
+                offset,
+                sort,
+                sortBy
         );
-
+        Long total =employeeRepository.countByCondition(entityManager, departmentId, projectId);
         LOGGER.info(Constant.END);
-        return new PageDto<>(employeePageDtoPage, 200, "Found employees", employees);
+        return new PageDto<>(200, "Found employees", limit, offset, total, employees);
     }
 
 
     @Transactional
-    public EmployeeResponse<Employee> createEmployee(EmployeeRequest employeeRequest) {
+    public EmployeeResponse<Employees> createEmployee(EmployeeRequest employeeRequest) {
+        LOGGER.info(Constant.START);
+        LOGGER.info("Create employee" + employeeRequest);
         String email = employeeRequest.getEmail();
-        List<ProjectInfo> projects = employeeRequest.getProjects();
-        Optional<Employee> employee = employeeRepository.findByEmail(email);
-        if(employee.isPresent()) {
-            return new EmployeeResponse<>(400, "Bad request. Employee's email is already in use");
+        if(!checkRegex(REGEX_EMAIL, email)) {
+            return new EmployeeResponse<>(400,"Email is invalid");
         }
-        Employee employeeNew = employeeRequest.convertToEmployeeEntity(employeeRequest);
+        List<ProjectInfo> projects = employeeRequest.getProjects();
+        Optional<Employees> employee = employeeRepository.findByEmail(email);
+        if(employee.isPresent()) {
+            return new EmployeeResponse<>(400,"Bad request. Email is already in use");
+        }
+        Employees employeeNew = employeeRequest.convertToEmployeeEntity(employeeRequest);
         employeeRepository.save(employeeNew);
         Long employeeId = employeeNew.getEmployeeId();
         if(projects.size() > 0) {
             for(ProjectInfo projectInfo : projects) {
                 try{
                     Long projectId = projectInfo.getProjectId();
-                    Team newTeam = new Team();
+                    Teams newTeam = new Teams();
                     newTeam.setEmployeeId(employeeId);
                     newTeam.setProjectId(projectId);
                     teamRepository.save(newTeam);
@@ -130,40 +141,58 @@ public class EmployeeService {
                 }
             }
         }
+        LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Created employee");
     }
 
-    @Transactional
-    public EmployeeResponse<Employee> updateEmployee(EmployeeRequest employeeRequest, Long employeeId) {
-        Optional<Employee> employeeOptional = employeeRepository.findById(employeeId);
-        if(!employeeOptional.isPresent()) {
-            return new EmployeeResponse<>(404, "Employee with employeeId " + employeeId + " is not available");
+    private boolean checkRegex(String regex, String value) {
+        boolean result = false;
+        Pattern regexGMT = Pattern.compile(regex);
+        Matcher matchFoundGMT = regexGMT.matcher(value);
+        // isDate
+        if (matchFoundGMT.find()) {
+            result = true;
         }
-        Employee employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest, employeeId);
+        return result;
+    }
+
+    @Transactional
+    public EmployeeResponse<Employees> updateEmployee(EmployeeRequest employeeRequest, Long employeeId) {
+        LOGGER.info(Constant.START);
+        LOGGER.info("Update employee " + employeeId);
+        Optional<Employees> employeeOptional = employeeRepository.findById(employeeId);
+        if(!employeeOptional.isPresent()) {
+            return new EmployeeResponse<>(404,"Employee with id " + employeeId + " does not exist");
+        }
+        Employees employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest, employeeId);
         employeeRepository.save(employeeNew);
 
         List<ProjectInfo> projects = employeeRequest.getProjects();
         if(projects.size() > 0) {
             for(ProjectInfo projectInfo : projects) {
                 Long projectId = projectInfo.getProjectId();
-                Optional<Team> teamOld = teamRepository.findByEmployeeIdAndProjectId(employeeId, projectId);
+                Optional<Teams> teamOld = teamRepository.findByEmployeeIdAndProjectId(employeeId, projectId);
                 if(!teamOld.isPresent()) {
-                    Team teamNew = new Team();
+                    Teams teamNew = new Teams();
                     teamNew.setEmployeeId(employeeId);
                     teamNew.setProjectId(projectId);
                     teamRepository.save(teamNew);
                 }
             }
         }
+        LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Updated employee");
     }
 
-    public EmployeeResponse<Employee> deleteEmployee(Long employeeId) {
-        Optional<Employee> employee = employeeRepository.findById(employeeId);
+    public EmployeeResponse<Employees> deleteEmployee(Long employeeId) throws ResourceNotFoundException{
+        LOGGER.info(Constant.START);
+        LOGGER.info("Delete employee " + employeeId);
+        Optional<Employees> employee = employeeRepository.findById(employeeId);
         if(!employee.isPresent()) {
-            return new EmployeeResponse<>(404, "Employee not found");
+            return new EmployeeResponse<>(404, "Resource not found");
         }
         employeeRepository.deleteById(employeeId);
+        LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Deleted employee");
     }
 

@@ -8,7 +8,7 @@ import java.util.Date;
 
 @Entity(name = "employee")
 @Data
-public class Employee {
+public class Employees {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,7 +36,7 @@ public class Employee {
     private String phoneNumber;
 
 
-    public Employee getUpdateEmployee(EmployeeRequest employeeRequest, long projectId){
+    public Employees getUpdateEmployee(EmployeeRequest employeeRequest, long projectId){
 
         if(employeeRequest.getDepartmentId() != null) this.departmentId = employeeRequest.getDepartmentId();
 

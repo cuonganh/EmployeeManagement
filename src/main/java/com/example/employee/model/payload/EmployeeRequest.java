@@ -1,7 +1,7 @@
 package com.example.employee.model.payload;
 
 import com.example.employee.model.dto.ProjectInfo;
-import com.example.employee.model.entity.Employee;
+import com.example.employee.model.entity.Employees;
 import lombok.Data;
 
 import java.util.Date;
@@ -29,9 +29,9 @@ public class EmployeeRequest {
     private String phoneNumber;
 
 
-    public Employee convertToEmployeeEntity(EmployeeRequest employeeRequest) {
+    public Employees convertToEmployeeEntity(EmployeeRequest employeeRequest) {
         try{
-            Employee employee = new Employee();
+            Employees employee = new Employees();
             if(employeeRequest.getDepartmentId()!=null) employee.setDepartmentId(departmentId);
             if(employeeRequest.getFirstName()!=null) employee.setFirstName(firstName);
             if(employeeRequest.getLastName()!=null) employee.setLastName(lastName);
