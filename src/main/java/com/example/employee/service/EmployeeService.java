@@ -16,10 +16,12 @@ import com.example.employee.repository.ProjectRepository;
 import com.example.employee.repository.TeamRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -27,12 +29,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.sql.Date;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -269,6 +269,51 @@ public class EmployeeService {
 
     private List<Employees> getAllEmployees() {
         return employeeRepository.findAll();
+    }
+
+
+    public EmployeeResponse<?> exportEmployees(Long departmentId, Long projectId, Integer limit, Integer offset, String sort, List<String> sortBy) {
+
+        List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
+                entityManager,
+                departmentId,
+                projectId,
+                limit,
+                offset,
+                sort,
+                sortBy
+        );
+        ByteArrayInputStream byteArrayInputStream = employeesToCSV(employees);
+
+        InputStreamResource inputStreamResource = new InputStreamResource(byteArrayInputStream);
+
+        return new EmployeeResponse<>(200, "Export Employees successfully");
+    }
+
+    private ByteArrayInputStream employeesToCSV(List<EmployeeBean> employees) {
+
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+             CSVPrinter csvPrinter = new CSVPrinter(new PrintWriter(out), Constant.CSV_FORMAT)
+        ) {
+            for (EmployeeBean employee : employees) {
+                List<String> data = Arrays.asList(
+                        employee.getEmployeeId(),
+                        employee.getDepartment(),
+                        employee.getFirstName(),
+                        employee.getLastName(),
+                        employee.getDateOfBirth().toString(),
+                        employee.getAddress(),
+                        employee.getEmail(),
+                        employee.getPhoneNumber()
+                );
+                csvPrinter.printRecord(data);
+            }
+            csvPrinter.flush();
+            return new ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException("Fail to import data to CSV file: " + e.getMessage());
+        }
+
     }
 
 

@@ -92,5 +92,28 @@ public class EmployeeController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
     }
 
+    @GetMapping("/export")
+    public ResponseEntity<?> exportEmployees(
+            @RequestParam(value = "departmentId", required = false) Long departmentId,
+            @RequestParam(value = "projectId", required = false) Long projectId,
+            @RequestParam(value = "limit", required = false) Integer limit,
+            @RequestParam(value = "offset", required = false) Integer offset,
+            @RequestParam(value = "sort", required = false) String sort,
+            @RequestParam(value = "sortBy", required = false) List<String> sortBy
+    ) {
+        String directionFile = "/data/export/";
+        return ResponseEntity.ok(
+                employeeService.exportEmployees(
+                        departmentId,
+                        projectId,
+                        limit,
+                        offset,
+                        sort,
+                        sortBy
+                )
+        );
+
+    }
+
 
 }
