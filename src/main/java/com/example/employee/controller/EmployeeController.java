@@ -101,7 +101,6 @@ public class EmployeeController {
             @RequestParam(value = "sort", required = false) String sort,
             @RequestParam(value = "sortBy", required = false) List<String> sortBy
     ) {
-        String directionFile = "/data/export/";
         return ResponseEntity.ok(
                 employeeService.exportEmployees(
                         departmentId,

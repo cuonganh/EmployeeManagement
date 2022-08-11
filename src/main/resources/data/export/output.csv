@@ -1,0 +1,4 @@
+employeeId, department, firstName, lastName, dateOfBirth, address, email, phoneNumber
+1,C/C++,Cuong 1,TV,2000-01-04 00:00:00.0,Ha Noi,cuong1@company.com,84400000001
+2,C/C++,Cuong 2,TV,2000-01-04 00:00:00.0,Ha Noi,cuong2@company.com,84400000002
+3,Java,Cuong 3,TV,2000-01-04 00:00:00.0,Ha Noi,cuong3@company.com,84400000003

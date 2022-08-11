@@ -21,7 +21,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -54,6 +54,10 @@ public class EmployeeService {
 
     @Autowired
     EmployeeDtoConverter employeeDtoConverter;
+
+    @Value("${exportFolder}")
+    String exportFolder;
+
 
 
     private final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
@@ -267,53 +271,37 @@ public class EmployeeService {
     }
 
 
-    private List<Employees> getAllEmployees() {
-        return employeeRepository.findAll();
-    }
-
-
     public EmployeeResponse<?> exportEmployees(Long departmentId, Long projectId, Integer limit, Integer offset, String sort, List<String> sortBy) {
 
-        List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
-                entityManager,
-                departmentId,
-                projectId,
-                limit,
-                offset,
-                sort,
-                sortBy
-        );
-        ByteArrayInputStream byteArrayInputStream = employeesToCSV(employees);
-
-        InputStreamResource inputStreamResource = new InputStreamResource(byteArrayInputStream);
-
-        return new EmployeeResponse<>(200, "Export Employees successfully");
-    }
-
-    private ByteArrayInputStream employeesToCSV(List<EmployeeBean> employees) {
-
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
-             CSVPrinter csvPrinter = new CSVPrinter(new PrintWriter(out), Constant.CSV_FORMAT)
-        ) {
+        String directionFile = exportFolder + "output.csv";
+        try {
+            PrintWriter csvWriter = new PrintWriter(directionFile);
+            StringBuilder stringBuilder = new StringBuilder(Constant.EMPLOYEE_HEADER_NAME);
+            List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
+                    entityManager,
+                    departmentId,
+                    projectId,
+                    limit,
+                    offset,
+                    sort,
+                    sortBy
+            );
             for (EmployeeBean employee : employees) {
-                List<String> data = Arrays.asList(
-                        employee.getEmployeeId(),
-                        employee.getDepartment(),
-                        employee.getFirstName(),
-                        employee.getLastName(),
-                        employee.getDateOfBirth().toString(),
-                        employee.getAddress(),
-                        employee.getEmail(),
-                        employee.getPhoneNumber()
-                );
-                csvPrinter.printRecord(data);
+                stringBuilder.append("\n").append(employee.getEmployeeId());
+                stringBuilder.append(",").append(employee.getDepartment());
+                stringBuilder.append(",").append(employee.getFirstName());
+                stringBuilder.append(",").append(employee.getLastName());
+                stringBuilder.append(",").append(employee.getDateOfBirth());
+                stringBuilder.append(",").append(employee.getAddress());
+                stringBuilder.append(",").append(employee.getEmail());
+                stringBuilder.append(",").append(employee.getPhoneNumber());
             }
-            csvPrinter.flush();
-            return new ByteArrayInputStream(out.toByteArray());
-        } catch (IOException e) {
-            throw new RuntimeException("Fail to import data to CSV file: " + e.getMessage());
+            csvWriter.println(stringBuilder);
+            csvWriter.close();
+        }catch (Exception e) {
+            return new EmployeeResponse<>(400, "Error when export Employees");
         }
-
+        return new EmployeeResponse<>(200, "Export Employees successfully");
     }
 
 
