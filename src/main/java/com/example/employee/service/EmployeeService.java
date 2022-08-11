@@ -31,10 +31,7 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.io.*;
 import java.sql.Date;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -271,12 +268,20 @@ public class EmployeeService {
     }
 
 
-    public EmployeeResponse<?> exportEmployees(Long departmentId, Long projectId, Integer limit, Integer offset, String sort, List<String> sortBy) {
+    public EmployeeResponse<?> exportEmployees(
+            Long departmentId,
+            Long projectId,
+            String[] exportFields,
+            Integer limit,
+            Integer offset,
+            String sort,
+            List<String> sortBy) {
 
         String directionFile = exportFolder + "output.csv";
         try {
             PrintWriter csvWriter = new PrintWriter(directionFile);
-            StringBuilder stringBuilder = new StringBuilder(Constant.EMPLOYEE_HEADER_NAME);
+            StringBuilder stringBuilderHeader = new StringBuilder();
+            StringBuilder stringBuilder = new StringBuilder();
             List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
                     entityManager,
                     departmentId,
@@ -286,15 +291,48 @@ public class EmployeeService {
                     sort,
                     sortBy
             );
-            for (EmployeeBean employee : employees) {
-                stringBuilder.append("\n").append(employee.getEmployeeId());
-                stringBuilder.append(",").append(employee.getDepartment());
-                stringBuilder.append(",").append(employee.getFirstName());
-                stringBuilder.append(",").append(employee.getLastName());
-                stringBuilder.append(",").append(employee.getDateOfBirth());
-                stringBuilder.append(",").append(employee.getAddress());
-                stringBuilder.append(",").append(employee.getEmail());
-                stringBuilder.append(",").append(employee.getPhoneNumber());
+
+            if(exportFields.length > 0) {
+                for (String field : exportFields) {
+                    if(isEmployeeColumns(field)) {
+                        stringBuilderHeader.append(field).append(",");
+                    }
+
+                    /* Header of export file
+                    if(i != 0) {
+                        stringBuilder.append(", ");
+                    }
+                    stringBuilder.append(exportFields[i]);
+                    */
+                }
+                stringBuilderHeader.deleteCharAt(stringBuilderHeader.length()-1);
+
+                for (EmployeeBean employee : employees) {
+                    //check export fields column exists
+
+                    /*
+                    stringBuilder.append("\n").append(employee.getEmployeeId());
+                    stringBuilder.append(",").append(employee.getDepartment());
+                    stringBuilder.append(",").append(employee.getFirstName());
+                    stringBuilder.append(",").append(employee.getLastName());
+                    stringBuilder.append(",").append(employee.getDateOfBirth());
+                    stringBuilder.append(",").append(employee.getAddress());
+                    stringBuilder.append(",").append(employee.getEmail());
+                    stringBuilder.append(",").append(employee.getPhoneNumber());
+                    */
+                }
+            }else{
+                stringBuilder.append(Constant.EMPLOYEE_HEADER_NAME);
+                for (EmployeeBean employee : employees) {
+                    stringBuilder.append("\n").append(employee.getEmployeeId());
+                    stringBuilder.append(",").append(employee.getDepartment());
+                    stringBuilder.append(",").append(employee.getFirstName());
+                    stringBuilder.append(",").append(employee.getLastName());
+                    stringBuilder.append(",").append(employee.getDateOfBirth());
+                    stringBuilder.append(",").append(employee.getAddress());
+                    stringBuilder.append(",").append(employee.getEmail());
+                    stringBuilder.append(",").append(employee.getPhoneNumber());
+                }
             }
             csvWriter.println(stringBuilder);
             csvWriter.close();
@@ -302,6 +340,24 @@ public class EmployeeService {
             return new EmployeeResponse<>(400, "Error when export Employees");
         }
         return new EmployeeResponse<>(200, "Export Employees successfully");
+    }
+
+    private boolean isEmployeeColumns(String field){
+        Map<String, String> employeeColumns = new HashMap<>();
+        employeeColumns.put("employeeId", "employeeId");
+        employeeColumns.put("departmentId", "departmentId");
+        employeeColumns.put("department", "department");
+        employeeColumns.put("firstName", "firstName");
+        employeeColumns.put("lastName", "lastName");
+        employeeColumns.put("dateOfBirth", "dateOfBirth");
+        employeeColumns.put("address", "address");
+        employeeColumns.put("email", "email");
+        employeeColumns.put("phoneNumber", "phoneNumber");
+
+        if(field.equalsIgnoreCase(employeeColumns.get(field))) {
+            return true;
+        }
+        return false;
     }
 
 

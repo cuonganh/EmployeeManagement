@@ -96,6 +96,7 @@ public class EmployeeController {
     public ResponseEntity<?> exportEmployees(
             @RequestParam(value = "departmentId", required = false) Long departmentId,
             @RequestParam(value = "projectId", required = false) Long projectId,
+            @RequestParam(value = "exportFields", required = false) String[] exportFields,
             @RequestParam(value = "limit", required = false) Integer limit,
             @RequestParam(value = "offset", required = false) Integer offset,
             @RequestParam(value = "sort", required = false) String sort,
@@ -105,6 +106,7 @@ public class EmployeeController {
                 employeeService.exportEmployees(
                         departmentId,
                         projectId,
+                        exportFields,
                         limit,
                         offset,
                         sort,
