@@ -2,7 +2,6 @@ package com.example.employee.service;
 
 import com.example.employee.common.Constant;
 import com.example.employee.common.converter.EmployeeDtoConverter;
-import com.example.employee.helper.CSVHelper;
 import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.dto.EmployeeDto;
 import com.example.employee.model.dto.PageDto;
@@ -15,6 +14,9 @@ import com.example.employee.model.payload.EmployeeResponse;
 import com.example.employee.repository.EmployeeRepository;
 import com.example.employee.repository.ProjectRepository;
 import com.example.employee.repository.TeamRepository;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +27,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -49,10 +55,6 @@ public class EmployeeService {
     @Autowired
     EmployeeDtoConverter employeeDtoConverter;
 
-    private final String REGEX_EMAIL =
-            "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])";
-
-    private final String REGEX_DATEOFBIRTH = "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$";
 
     private final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
 
@@ -120,7 +122,7 @@ public class EmployeeService {
         LOGGER.info(Constant.START);
         LOGGER.info("Create employee" + employeeRequest);
         String email = employeeRequest.getEmail();
-        if(!checkRegex(REGEX_EMAIL, email)) {
+        if(!checkRegex(Constant.REGEX_EMAIL, email)) {
             return new EmployeeResponse<>(400,"Email is invalid");
         }
         List<ProjectInfo> projects = employeeRequest.getProjects();
@@ -203,8 +205,15 @@ public class EmployeeService {
     public EmployeeResponse<Employees> importEmployees(MultipartFile file) {
 
         try {
-            List<Employees> employees = CSVHelper.csvToEmployees(file.getInputStream());
-            employeeRepository.saveAll(employees);
+            List<Employees> employees = csvToEmployees(file.getInputStream());
+            for (Employees employee : employees) {
+                Optional<Employees> employeeOptional = employeeRepository.findByEmail(employee.getEmail());
+                if (employeeOptional.isPresent()) {
+                    continue;
+                }
+                employeeRepository.save(employee);
+            }
+            //employeeRepository.saveAll(employees);
         } catch (IOException e) {
             throw new RuntimeException("Fail to store csv data: " + e.getMessage());
         }
@@ -213,7 +222,52 @@ public class EmployeeService {
         return new EmployeeResponse<>(200, "Imported employees");
     }
 
-    public List<Employees> getAllEmployees() {
+    public boolean hasCSVFormat(MultipartFile file) {
+        if (!Constant.CSV_TYPE.equals(file.getContentType())) {
+            return false;
+        }
+        return true;
+    }
+
+    private List<Employees> csvToEmployees(InputStream is) {
+        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+             CSVParser csvParser = new CSVParser(fileReader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
+            List<Employees> employees = new ArrayList<>();
+            Iterable<CSVRecord> csvRecords = csvParser.getRecords();
+            for (CSVRecord csvRecord : csvRecords) {
+                try{
+                    Employees employee = new Employees();
+                    //Skip with record missing value
+                    if(csvRecord.get("departmentId").trim().equals("")
+                            || csvRecord.get("firstName").trim().equals("")
+                            || csvRecord.get("lastName").trim().equals("")
+                            || csvRecord.get("dateOfBirth").trim().equals("")
+                            || csvRecord.get("address").trim().equals("")
+                            || csvRecord.get("email").trim().equals("")
+                            || !checkRegex(Constant.REGEX_EMAIL, csvRecord.get("email").trim())
+                            || csvRecord.get("phoneNumber").trim().equals("")){
+                        continue;
+                    }
+                    employee.setDepartmentId(Long.parseLong(csvRecord.get("departmentId").trim()));
+                    employee.setFirstName(csvRecord.get("firstName").trim());
+                    employee.setLastName(csvRecord.get("lastName").trim());
+                    employee.setDateOfBirth(Date.valueOf(csvRecord.get("dateOfBirth").trim()));
+                    employee.setAddress(csvRecord.get("address").trim());
+                    employee.setEmail(csvRecord.get("email").trim());
+                    employee.setPhoneNumber(csvRecord.get("phoneNumber").trim());
+                    employees.add(employee);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+            return employees;
+        } catch (IOException e) {
+            throw new RuntimeException("Fail to parse CSV file: " + e.getMessage());
+        }
+    }
+
+
+    private List<Employees> getAllEmployees() {
         return employeeRepository.findAll();
     }
 
