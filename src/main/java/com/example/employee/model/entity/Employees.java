@@ -35,6 +35,28 @@ public class Employees {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    public Employees(){
+
+    }
+
+    public Employees(
+            Long departmentId,
+            String firstName,
+            String lastName,
+            Date dateOfBirth,
+            String address,
+            String email,
+            String phoneNumber
+    ) {
+        this.departmentId = departmentId;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.dateOfBirth = dateOfBirth;
+        this.address = address;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+    }
+
 
     public Employees getUpdateEmployee(EmployeeRequest employeeRequest, long projectId){
 
