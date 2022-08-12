@@ -189,6 +189,7 @@ public class EmployeeService {
         return new EmployeeResponse<>(200, "Updated employee");
     }
 
+    @Transactional
     public EmployeeResponse<Employees> deleteEmployee(Long employeeId) throws ResourceNotFoundException{
         LOGGER.info(Constant.START);
         LOGGER.info("Delete employee " + employeeId);
@@ -197,6 +198,7 @@ public class EmployeeService {
             return new EmployeeResponse<>(404, "Resource not found");
         }
         employeeRepository.deleteById(employeeId);
+        teamRepository.deleteByEmployeeId(employeeId);
         LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Deleted employee");
     }
