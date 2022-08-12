@@ -7,6 +7,7 @@ import com.example.employee.model.dto.EmployeeDto;
 import com.example.employee.model.dto.PageDto;
 import com.example.employee.model.dto.ProjectInfo;
 import com.example.employee.model.entity.Employees;
+import com.example.employee.model.entity.Projects;
 import com.example.employee.model.entity.Teams;
 import com.example.employee.model.exception.ResourceNotFoundException;
 import com.example.employee.model.payload.EmployeeRequest;
@@ -164,24 +165,30 @@ public class EmployeeService {
     @Transactional
     public EmployeeResponse<Employees> updateEmployee(EmployeeRequest employeeRequest, Long employeeId) {
         LOGGER.info(Constant.START);
-        LOGGER.info("Update employee " + employeeId);
+        LOGGER.info("Update for employee with employeeId " + employeeId);
         Optional<Employees> employeeOptional = employeeRepository.findById(employeeId);
         if(!employeeOptional.isPresent()) {
-            return new EmployeeResponse<>(404,"Employee with id " + employeeId + " does not exist");
+            return new EmployeeResponse<>(404,"Employee with employeeId " + employeeId + " does not exist");
         }
         Employees employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest, employeeId);
         employeeRepository.save(employeeNew);
 
+        /*
+        default keep all projects and only update projects when
+        clear all projects and update projects for this employee on team entity
+        */
         List<ProjectInfo> projects = employeeRequest.getProjects();
         if(projects.size() > 0) {
+            teamRepository.deleteByEmployeeId(employeeId);
             for(ProjectInfo projectInfo : projects) {
-                Long projectId = projectInfo.getProjectId();
-                Optional<Teams> teamOld = teamRepository.findByEmployeeIdAndProjectId(employeeId, projectId);
-                if(!teamOld.isPresent()) {
+                Optional<Projects> oldProject = projectRepository.findById(projectInfo.getProjectId());
+                if(oldProject.isPresent()) {
                     Teams teamNew = new Teams();
                     teamNew.setEmployeeId(employeeId);
-                    teamNew.setProjectId(projectId);
+                    teamNew.setProjectId(projectInfo.getProjectId());
                     teamRepository.save(teamNew);
+                }else{
+                    LOGGER.error("Not found projectId " + projectInfo.getProjectId() + "on team entity");
                 }
             }
         }
