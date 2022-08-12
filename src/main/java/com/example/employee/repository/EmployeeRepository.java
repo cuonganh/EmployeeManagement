@@ -43,47 +43,45 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long> {
             String sortType,
             List<String> sortBy
     ){
-        String sqlJoin = "SELECT" +
+        StringBuilder sqlQuery = new StringBuilder("SELECT" +
                 " e.employee_id as employeeId, d.name as department," +
                 " e.first_name as firstName, e.last_name as lastName," +
                 " e.date_of_birth as dateOfBirth, e.address as address," +
                 " e.email as email, e.phone_number as phoneNumber," +
                 " GROUP_CONCAT(CONCAT(p.project_id,',', p.name,',', c.name,',', p.man_day) separator '|')  as projects" +
                 " FROM employee e " +
-                " INNER JOIN team t on t.employee_id = e.employee_id " +
-                " INNER JOIN project p on p.project_id = t.project_id " +
-                " INNER JOIN department d on d.department_id = e.department_id " +
-                " INNER JOIN customer c on c.customer_id = p.customer_id"
+                " LEFT JOIN team t on t.employee_id = e.employee_id " +
+                " LEFT JOIN project p on p.project_id = t.project_id " +
+                " LEFT JOIN department d on d.department_id = e.department_id " +
+                " LEFT JOIN customer c on c.customer_id = p.customer_id" +
+                " WHERE 1 = 1 ")
                 ;
-
-        StringBuilder sqlWhere = new StringBuilder(" where 1 = 1 ");
         if(departmentId != null) {
-            sqlWhere.append(" and d.department_id = " + departmentId);
+            sqlQuery.append(" and d.department_id = " + departmentId);
         }
         if(projectId != null) {
-            sqlWhere.append(" and p.project_id = " + projectId);
+            sqlQuery.append(" and p.project_id = " + projectId);
         }
+        sqlQuery.append(" GROUP BY e.employee_id");
 
         if(sortType != null && sortType.equalsIgnoreCase("desc")) {
             sortType = " DESC";
         }else{
             sortType = " ASC";
         }
-        StringBuilder sqlOrder = new StringBuilder(" GROUP BY e.employee_id");
         if(sortBy != null) {
-            sqlOrder.append(" ORDER BY ");
+            sqlQuery.append(" ORDER BY ");
             for (int i = 0; i < sortBy.size(); i++) {
                 if(i != 0) {
-                    sqlOrder.append(", ");
+                    sqlQuery.append(", ");
                 }
-                sqlOrder.append(sortBy.get(i) + " " + sortType);
+                sqlQuery.append(sortBy.get(i) + " " + sortType);
             }
         }
-        sqlOrder.append(" LIMIT ").append(limit);
-        sqlOrder.append(" OFFSET ").append(offset);
+        sqlQuery.append(" LIMIT ").append(limit);
+        sqlQuery.append(" OFFSET ").append(offset);
 
-        String sqlQuery = sqlJoin + sqlWhere + sqlOrder;
-        javax.persistence.Query queryNative = entityManager.createNativeQuery(sqlQuery);
+        javax.persistence.Query queryNative = entityManager.createNativeQuery(sqlQuery.toString());
 
         return (List<EmployeeBean>) queryNative
                 .getResultStream()
@@ -97,10 +95,10 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long> {
 
         StringBuilder sql = new StringBuilder("SELECT count(distinct e.employee_id)" +
                 " FROM employee e" +
-                " INNER JOIN team t on t.employee_id = e.employee_id " +
-                " INNER JOIN project p on p.project_id = t.project_id " +
-                " INNER JOIN department d on d.department_id = e.department_id " +
-                " INNER JOIN customer c on c.customer_id = p.customer_id" +
+                " LEFT JOIN team t on t.employee_id = e.employee_id " +
+                " LEFT JOIN project p on p.project_id = t.project_id " +
+                " LEFT JOIN department d on d.department_id = e.department_id " +
+                " LEFT JOIN customer c on c.customer_id = p.customer_id" +
                 " WHERE 1 = 1 ");
         if(departmentId != null){
             sql.append(" and e.department_id = " + departmentId);
