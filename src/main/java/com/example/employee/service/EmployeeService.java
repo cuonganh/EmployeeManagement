@@ -20,6 +20,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -27,14 +28,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.sql.Date;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,6 +50,10 @@ public class EmployeeService {
 
     @Autowired
     EmployeeDtoConverter employeeDtoConverter;
+
+    @Value("${exportFolder}")
+    String exportFolder;
+
 
 
     private final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
@@ -267,8 +267,116 @@ public class EmployeeService {
     }
 
 
-    private List<Employees> getAllEmployees() {
-        return employeeRepository.findAll();
+    public EmployeeResponse<?> exportEmployees(
+            Long departmentId,
+            Long projectId,
+            String[] exportFields,
+            Integer limit,
+            Integer offset,
+            String sort,
+            List<String> sortBy) {
+
+        String directionFile = exportFolder + "output.csv";
+        try {
+            PrintWriter csvWriter = new PrintWriter(directionFile);
+            StringBuilder stringBuilder = new StringBuilder();
+            List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
+                    entityManager,
+                    departmentId,
+                    projectId,
+                    limit,
+                    offset,
+                    sort,
+                    sortBy
+            );
+
+            if(exportFields.length > 0) {
+                //get the export fields header
+                for(int i = 0; i < exportFields.length; i++) {
+                    if(isEmployeeColumns(exportFields[i])) {
+                        stringBuilder.append(exportFields[i]);
+                        stringBuilder.append(",");
+                    }
+                }
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                stringBuilder.append("\n");
+                //export value for these export fields
+                for (EmployeeBean employee : employees) {
+                    for (int i = 0; i < exportFields.length; i++) {
+                        if(isEmployeeColumns(exportFields[i])){
+                            stringBuilder.append(exportColumnValue(employee, exportFields[i]));
+                            stringBuilder.append(",");
+                        }
+                    }
+                    stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                    stringBuilder.append("\n");
+                }
+            }else{
+                stringBuilder.append(Constant.EMPLOYEE_HEADER_NAME);
+                for (EmployeeBean employee : employees) {
+                    stringBuilder.append("\n").append(employee.getEmployeeId());
+                    stringBuilder.append(",").append(employee.getDepartment());
+                    stringBuilder.append(",").append(employee.getFirstName());
+                    stringBuilder.append(",").append(employee.getLastName());
+                    stringBuilder.append(",").append(employee.getDateOfBirth());
+                    stringBuilder.append(",").append(employee.getAddress());
+                    stringBuilder.append(",").append(employee.getEmail());
+                    stringBuilder.append(",").append(employee.getPhoneNumber());
+                }
+            }
+            csvWriter.println(stringBuilder);
+            csvWriter.close();
+        }catch (Exception e) {
+            return new EmployeeResponse<>(400, "Error when export Employees");
+        }
+        return new EmployeeResponse<>(200, "Export Employees successfully");
+    }
+
+    private boolean isEmployeeColumns(String field){
+        Map<String, String> employeeColumns = new HashMap<>();
+        employeeColumns.put("employeeId", "employeeId");
+        employeeColumns.put("departmentId", "departmentId");
+        employeeColumns.put("department", "department");
+        employeeColumns.put("firstName", "firstName");
+        employeeColumns.put("lastName", "lastName");
+        employeeColumns.put("dateOfBirth", "dateOfBirth");
+        employeeColumns.put("address", "address");
+        employeeColumns.put("email", "email");
+        employeeColumns.put("phoneNumber", "phoneNumber");
+
+        if(field.equalsIgnoreCase(employeeColumns.get(field))) {
+            return true;
+        }
+        return false;
+    }
+
+    private StringBuilder exportColumnValue(EmployeeBean employeeBean, String field){
+        StringBuilder result = new StringBuilder();
+        if(field.equalsIgnoreCase("employeeId")){
+            result.append(employeeBean.getEmployeeId());
+        }
+        if(field.equalsIgnoreCase("department")){
+            result.append(employeeBean.getDepartment());
+        }
+        if(field.equalsIgnoreCase("firstName")){
+            result.append(employeeBean.getFirstName());
+        }
+        if(field.equalsIgnoreCase("lastName")){
+            result.append(employeeBean.getLastName());
+        }
+        if(field.equalsIgnoreCase("dateOfBirth")){
+            result.append(employeeBean.getDateOfBirth());
+        }
+        if(field.equalsIgnoreCase("address")){
+            result.append(employeeBean.getAddress());
+        }
+        if(field.equalsIgnoreCase("email")){
+            result.append(employeeBean.getEmail());
+        }
+        if(field.equalsIgnoreCase("phoneNumber")){
+            result.append(employeeBean.getPhoneNumber());
+        }
+        return result;
     }
 
 
