@@ -16,7 +16,6 @@ import com.example.employee.repository.ProjectRepository;
 import com.example.employee.repository.TeamRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -280,7 +279,6 @@ public class EmployeeService {
         String directionFile = exportFolder + "output.csv";
         try {
             PrintWriter csvWriter = new PrintWriter(directionFile);
-            StringBuilder stringBuilderHeader = new StringBuilder();
             StringBuilder stringBuilder = new StringBuilder();
             List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
                     entityManager,
@@ -293,33 +291,25 @@ public class EmployeeService {
             );
 
             if(exportFields.length > 0) {
-                for (String field : exportFields) {
-                    if(isEmployeeColumns(field)) {
-                        stringBuilderHeader.append(field).append(",");
+                //get the export fields header
+                for(int i = 0; i < exportFields.length; i++) {
+                    if(isEmployeeColumns(exportFields[i])) {
+                        stringBuilder.append(exportFields[i]);
+                        stringBuilder.append(",");
                     }
-
-                    /* Header of export file
-                    if(i != 0) {
-                        stringBuilder.append(", ");
-                    }
-                    stringBuilder.append(exportFields[i]);
-                    */
                 }
-                stringBuilderHeader.deleteCharAt(stringBuilderHeader.length()-1);
-
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                stringBuilder.append("\n");
+                //export value for these export fields
                 for (EmployeeBean employee : employees) {
-                    //check export fields column exists
-
-                    /*
-                    stringBuilder.append("\n").append(employee.getEmployeeId());
-                    stringBuilder.append(",").append(employee.getDepartment());
-                    stringBuilder.append(",").append(employee.getFirstName());
-                    stringBuilder.append(",").append(employee.getLastName());
-                    stringBuilder.append(",").append(employee.getDateOfBirth());
-                    stringBuilder.append(",").append(employee.getAddress());
-                    stringBuilder.append(",").append(employee.getEmail());
-                    stringBuilder.append(",").append(employee.getPhoneNumber());
-                    */
+                    for (int i = 0; i < exportFields.length; i++) {
+                        if(isEmployeeColumns(exportFields[i])){
+                            stringBuilder.append(exportColumnValue(employee, exportFields[i]));
+                            stringBuilder.append(",");
+                        }
+                    }
+                    stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                    stringBuilder.append("\n");
                 }
             }else{
                 stringBuilder.append(Constant.EMPLOYEE_HEADER_NAME);
@@ -358,6 +348,35 @@ public class EmployeeService {
             return true;
         }
         return false;
+    }
+
+    private StringBuilder exportColumnValue(EmployeeBean employeeBean, String field){
+        StringBuilder result = new StringBuilder();
+        if(field.equalsIgnoreCase("employeeId")){
+            result.append(employeeBean.getEmployeeId());
+        }
+        if(field.equalsIgnoreCase("department")){
+            result.append(employeeBean.getDepartment());
+        }
+        if(field.equalsIgnoreCase("firstName")){
+            result.append(employeeBean.getFirstName());
+        }
+        if(field.equalsIgnoreCase("lastName")){
+            result.append(employeeBean.getLastName());
+        }
+        if(field.equalsIgnoreCase("dateOfBirth")){
+            result.append(employeeBean.getDateOfBirth());
+        }
+        if(field.equalsIgnoreCase("address")){
+            result.append(employeeBean.getAddress());
+        }
+        if(field.equalsIgnoreCase("email")){
+            result.append(employeeBean.getEmail());
+        }
+        if(field.equalsIgnoreCase("phoneNumber")){
+            result.append(employeeBean.getPhoneNumber());
+        }
+        return result;
     }
 
 
