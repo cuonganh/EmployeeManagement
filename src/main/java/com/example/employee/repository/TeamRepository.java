@@ -11,5 +11,6 @@ public interface TeamRepository extends JpaRepository<Teams, Long> {
 
     Optional<Teams> findByEmployeeIdAndProjectId(Long employeeId, Long projectId);
 
+    void deleteByEmployeeId(Long employeeId);
 
 }
