@@ -41,7 +41,6 @@ public class DepartmentService {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Get departments list");
-        Sort.Direction direction = Sort.Direction.DESC;
 
         if(limit == null){
             limit = 10;
@@ -51,12 +50,11 @@ public class DepartmentService {
         }
         if(sort != null){
             if(sort.equalsIgnoreCase("asc")){
-                direction = Sort.Direction.ASC;
             }
         }
         if(CollectionUtils.isEmpty(sortBy)){
             sortBy = new ArrayList<>();
-            sortBy.add("departmentId");
+            sortBy.add("department_id");
         }
 
         List<DepartmentBean> employees = departmentRepository.getAllDepartmentBeen(
@@ -68,7 +66,7 @@ public class DepartmentService {
                 sort,
                 sortBy
         );
-        Long total =departmentRepository.countByCondition(entityManager, member, name);
+        Long total =departmentRepository.countByCondition(entityManager, member, name, sort, sortBy);
         LOGGER.info(Constant.END);
         return new PageDto<>(200, "Found employees", limit, offset, total, employees);
     }

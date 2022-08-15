@@ -2,11 +2,6 @@ package com.example.employee.model.dto;
 
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-
 @Data
 public class DepartmentBean {
 
@@ -37,7 +32,7 @@ public class DepartmentBean {
             description = fields[3].toString();
         }
         if(fields[4] != null){
-            leader = fields[5].toString();
+            leader = fields[4].toString();
         }
     }
 
