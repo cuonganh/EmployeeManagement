@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Repository
-public interface DepartmentRepository extends JpaRepository<Departments, Long> {
+public interface DepartmentRepository extends JpaRepository<Departments, Long>, AbstractRepository {
 
     default List<DepartmentBean> getAllDepartmentBeen(
             EntityManager entityManager,
@@ -72,20 +72,8 @@ public interface DepartmentRepository extends JpaRepository<Departments, Long> {
         if(member != null) {
             sqlQuery.append(" AND member = ").append(member);
         }
-        if(sortType != null && sortType.equalsIgnoreCase("desc")) {
-            sortType = " DESC";
-        }else{
-            sortType = " ASC";
-        }
-        if(sortBy != null) {
-            sqlQuery.append(" ORDER BY ");
-            for (int i = 0; i < sortBy.size(); i++) {
-                if(i != 0) {
-                    sqlQuery.append(", ");
-                }
-                sqlQuery.append(sortBy.get(i) + " " + sortType);
-            }
-        }
+        sqlQuery.append(createSortAndOrderQuery(sortType, sortBy));
+
         return sqlQuery;
     }
 

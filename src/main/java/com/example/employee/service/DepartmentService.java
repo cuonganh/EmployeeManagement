@@ -2,14 +2,11 @@ package com.example.employee.service;
 
 import com.example.employee.common.Constant;
 import com.example.employee.model.dto.DepartmentBean;
-import com.example.employee.model.dto.DepartmentDto;
-import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.dto.PageDto;
 import com.example.employee.repository.DepartmentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -30,7 +27,7 @@ public class DepartmentService {
 
     private final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
 
-    public PageDto<DepartmentDto> getDepartments(
+    public PageDto<DepartmentBean> getDepartments(
             Long member,
             String name,
             Integer limit,

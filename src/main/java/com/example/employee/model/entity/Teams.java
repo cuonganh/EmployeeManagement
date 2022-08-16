@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 
+
 @Entity(name = "team")
 @Data
 public class Teams {

@@ -1,8 +1,10 @@
 package com.example.employee.model.dto;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class ProjectInfo {
     Long projectId;
     String projectName;

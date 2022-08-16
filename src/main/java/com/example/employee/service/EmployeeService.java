@@ -30,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -170,7 +171,7 @@ public class EmployeeService {
         if(!employeeOptional.isPresent()) {
             return new EmployeeResponse<>(404,"Employee with employeeId " + employeeId + " does not exist");
         }
-        Employees employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest, employeeId);
+        Employees employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest);
         employeeRepository.save(employeeNew);
 
         /*
@@ -232,14 +233,11 @@ public class EmployeeService {
     }
 
     public boolean hasCSVFormat(MultipartFile file) {
-        if (!Constant.CSV_TYPE.equals(file.getContentType())) {
-            return false;
-        }
-        return true;
+        return Constant.CSV_TYPE.equals(file.getContentType());
     }
 
     private List<Employees> csvToEmployees(InputStream is) {
-        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
              CSVParser csvParser = new CSVParser(fileReader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
             List<Employees> employees = new ArrayList<>();
             Iterable<CSVRecord> csvRecords = csvParser.getRecords();
@@ -301,9 +299,9 @@ public class EmployeeService {
 
             if(exportFields.length > 0) {
                 //get the export fields header
-                for(int i = 0; i < exportFields.length; i++) {
-                    if(isEmployeeColumns(exportFields[i])) {
-                        stringBuilder.append(exportFields[i]);
+                for (String exportField : exportFields) {
+                    if (isEmployeeColumns(exportField)) {
+                        stringBuilder.append(exportField);
                         stringBuilder.append(",");
                     }
                 }
@@ -311,9 +309,9 @@ public class EmployeeService {
                 stringBuilder.append("\n");
                 //export value for these export fields
                 for (EmployeeBean employee : employees) {
-                    for (int i = 0; i < exportFields.length; i++) {
-                        if(isEmployeeColumns(exportFields[i])){
-                            stringBuilder.append(exportColumnValue(employee, exportFields[i]));
+                    for (String exportField : exportFields) {
+                        if (isEmployeeColumns(exportField)) {
+                            stringBuilder.append(exportColumnValue(employee, exportField));
                             stringBuilder.append(",");
                         }
                     }
@@ -353,10 +351,7 @@ public class EmployeeService {
         employeeColumns.put("email", "email");
         employeeColumns.put("phoneNumber", "phoneNumber");
 
-        if(field.equalsIgnoreCase(employeeColumns.get(field))) {
-            return true;
-        }
-        return false;
+        return field.equalsIgnoreCase(employeeColumns.get(field));
     }
 
     private StringBuilder exportColumnValue(EmployeeBean employeeBean, String field){

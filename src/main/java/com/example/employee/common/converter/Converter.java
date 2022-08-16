@@ -13,7 +13,7 @@ public interface Converter<E, D> {
     default List<D> convertToDtos(final Collection<E> entities){
         return entities
                 .stream()
-                .map(entity -> convertToDto(entity))
+                .map(this::convertToDto)
                 .collect(Collectors.toList()
         );
     }
@@ -21,7 +21,7 @@ public interface Converter<E, D> {
     default List<E> convertToEntities(final Collection<D> dtos){
         return dtos
                 .stream()
-                .map(dto -> convertToEntity(dto))
+                .map(this::convertToEntity)
                 .collect(Collectors.toList()
         );
     }
