@@ -1,5 +1,6 @@
 package com.example.employee.model.dto;
 
+import com.example.employee.common.enumerate.EPriorityLevel;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -54,11 +55,12 @@ public class EmployeeBean {
             for (String element : listProjects) {
                 ProjectInfo projectInfo = new ProjectInfo();
                 List<String> properties = Arrays.asList(element.split(","));
-                if(properties.size() == 4){
+                if(properties.size() == 5){
                     projectInfo.setProjectId(Long.valueOf(properties.get(0)));
                     projectInfo.setProjectName(properties.get(1));
                     projectInfo.setCustomer(properties.get(2));
                     projectInfo.setManDay(Long.valueOf(properties.get(3)));
+                    projectInfo.setPriorityLevel(EPriorityLevel.valueOf(properties.get(4)));
                     projects.add(projectInfo);
                 }
             }

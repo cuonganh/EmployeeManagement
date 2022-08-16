@@ -102,9 +102,9 @@ public class EmployeeService {
         LOGGER.info(Constant.START);
         LOGGER.info("Create employee" + employeeRequest);
         String email = employeeRequest.getEmail();
-        if(!isValidRegex(email)) {
+        /*if(!isValidRegex(email)) {
             return new EmployeeResponse<>(400,"Email is invalid");
-        }
+        }*/
         List<ProjectInfo> projects = employeeRequest.getProjects();
         Optional<Employees> employee = employeeRepository.findByEmail(email);
         if(employee.isPresent()) {

@@ -50,7 +50,7 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long>, Abst
                 " e.first_name as firstName, e.last_name as lastName," +
                 " e.date_of_birth as dateOfBirth, e.address as address," +
                 " e.email as email, e.phone_number as phoneNumber," +
-                " GROUP_CONCAT(CONCAT(p.project_id,',', p.name,',', c.name,',', p.man_day) separator '|')  as projects" +
+                " GROUP_CONCAT(CONCAT(p.project_id,',', p.name,',', c.name,',', p.man_day,',',p.priority_level) separator '|')  as projects" +
                 " FROM employee e " +
                 " LEFT JOIN team t on t.employee_id = e.employee_id " +
                 " LEFT JOIN project p on p.project_id = t.project_id " +

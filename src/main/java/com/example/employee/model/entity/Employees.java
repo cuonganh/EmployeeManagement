@@ -60,7 +60,7 @@ public class Employees {
 
     public Employees getUpdateEmployee(EmployeeRequest employeeRequest){
 
-        if(employeeRequest.getDepartmentId() != null) this.departmentId = employeeRequest.getDepartmentId();
+        if(employeeRequest.getDepartmentId() != null) this.departmentId = Long.valueOf(employeeRequest.getDepartmentId());
 
         if(employeeRequest.getFirstName()!=null) this.firstName = employeeRequest.getFirstName();
 
