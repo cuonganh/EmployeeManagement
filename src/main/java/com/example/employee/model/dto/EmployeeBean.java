@@ -49,7 +49,7 @@ public class EmployeeBean {
             phoneNumber = fields[7].toString();
         }
         if(fields[8]!= null){
-            List<String> listProjects = Arrays.asList(fields[8].toString().split("\\|"));
+            String[] listProjects = fields[8].toString().split("\\|");
             projects = new ArrayList<>();
             for (String element : listProjects) {
                 ProjectInfo projectInfo = new ProjectInfo();

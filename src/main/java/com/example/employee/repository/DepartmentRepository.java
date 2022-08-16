@@ -49,10 +49,11 @@ public interface DepartmentRepository extends JpaRepository<Departments, Long>, 
             String sortType,
             List<String> sortBy
     ){
-        StringBuilder sqlQuery = new StringBuilder("SELECT COUNT(department_id) " );
-        sqlQuery.append(createDepartmentQuery(member, name, sortType, sortBy));
 
-        javax.persistence.Query sqlNative = entityManager.createNativeQuery(sqlQuery.toString());
+        javax.persistence.Query sqlNative = entityManager.createNativeQuery(
+                "SELECT COUNT(department_id) " +
+                        createDepartmentQuery(member, name, sortType, sortBy)
+        );
 
         BigInteger total = (BigInteger) sqlNative.getSingleResult();
 

@@ -15,8 +15,8 @@ public class Departments {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "member")
-    private Long member;
+    @Column(name = "members")
+    private Long members;
 
     @Column(name = "description")
     private String description;
