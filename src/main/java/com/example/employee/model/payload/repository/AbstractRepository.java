@@ -1,4 +1,4 @@
-package com.example.employee.repository;
+package com.example.employee.model.payload.repository;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.example.employee.repository;
+package com.example.employee.model.payload.repository;
 
 import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.entity.Employees;

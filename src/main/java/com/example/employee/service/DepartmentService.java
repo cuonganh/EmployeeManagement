@@ -3,7 +3,7 @@ package com.example.employee.service;
 import com.example.employee.common.Constant;
 import com.example.employee.model.dto.DepartmentBean;
 import com.example.employee.model.dto.PageDto;
-import com.example.employee.repository.DepartmentRepository;
+import com.example.employee.model.payload.repository.DepartmentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +22,6 @@ public class DepartmentService {
 
     @Autowired
     private DepartmentRepository departmentRepository;
-
 
 
     private final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
@@ -44,10 +43,6 @@ public class DepartmentService {
         }
         if(offset == null){
             offset = 0;
-        }
-        if(sort != null){
-            if(sort.equalsIgnoreCase("asc")){
-            }
         }
         if(CollectionUtils.isEmpty(sortBy)){
             sortBy = new ArrayList<>();

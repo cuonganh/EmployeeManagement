@@ -12,9 +12,9 @@ import com.example.employee.model.entity.Teams;
 import com.example.employee.model.exception.ResourceNotFoundException;
 import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.model.payload.EmployeeResponse;
-import com.example.employee.repository.EmployeeRepository;
-import com.example.employee.repository.ProjectRepository;
-import com.example.employee.repository.TeamRepository;
+import com.example.employee.model.payload.repository.EmployeeRepository;
+import com.example.employee.model.payload.repository.ProjectRepository;
+import com.example.employee.model.payload.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -22,7 +22,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -77,19 +76,9 @@ public class EmployeeService {
     ) {
         LOGGER.info(Constant.START);
         LOGGER.info("Get employees list");
-        Sort.Direction direction = Sort.Direction.DESC;
 
-        if(limit == null){
-            limit = 10;
-        }
-        if(offset == null){
-            offset = 0;
-        }
-        if(sort != null){
-            if(sort.equalsIgnoreCase("asc")){
-                direction = Sort.Direction.ASC;
-            }
-        }
+        if(limit == null) limit = 10;
+        if(offset == null) offset = 0;
         if(CollectionUtils.isEmpty(sortBy)){
             sortBy = new ArrayList<>();
             sortBy.add("employeeId");
@@ -239,7 +228,6 @@ public class EmployeeService {
                     if(isCSVRecordValid(csvRecord)){
                         continue;
                     }
-
                     Employees employee = new Employees();
                     employee.setDepartmentId(Long.parseLong(csvRecord.get(EEmployee.DEPARTMENT_ID.getValue()).trim()));
                     employee.setFirstName(csvRecord.get(EEmployee.FIRST_NAME.getValue()).trim());
