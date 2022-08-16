@@ -5,8 +5,6 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 @Entity(name = "employee")
 @Data
@@ -60,9 +58,9 @@ public class Employees {
     }
 
 
-    public Employees getUpdateEmployee(EmployeeRequest employeeRequest, long projectId){
+    public Employees getUpdateEmployee(EmployeeRequest employeeRequest){
 
-        if(employeeRequest.getDepartmentId() != null) this.departmentId = employeeRequest.getDepartmentId();
+        if(employeeRequest.getDepartmentId() != null) this.departmentId = Long.valueOf(employeeRequest.getDepartmentId());
 
         if(employeeRequest.getFirstName()!=null) this.firstName = employeeRequest.getFirstName();
 

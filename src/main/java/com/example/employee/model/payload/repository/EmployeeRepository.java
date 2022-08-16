@@ -1,4 +1,4 @@
-package com.example.employee.repository;
+package com.example.employee.model.payload.repository;
 
 import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.entity.Employees;
@@ -12,8 +12,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Repository
-public interface EmployeeRepository extends JpaRepository<Employees, Long> {
+public interface EmployeeRepository extends JpaRepository<Employees, Long>, AbstractRepository {
 
+
+    Optional<Employees> findByEmail(String email);
 
     default List<EmployeeBean> getEmployeeBeen(EntityManager entityManager, Long employeeId){
 
@@ -48,7 +50,7 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long> {
                 " e.first_name as firstName, e.last_name as lastName," +
                 " e.date_of_birth as dateOfBirth, e.address as address," +
                 " e.email as email, e.phone_number as phoneNumber," +
-                " GROUP_CONCAT(CONCAT(p.project_id,',', p.name,',', c.name,',', p.man_day) separator '|')  as projects" +
+                " GROUP_CONCAT(CONCAT(p.project_id,',', p.name,',', c.name,',', p.man_day,',',p.priority_level) separator '|')  as projects" +
                 " FROM employee e " +
                 " LEFT JOIN team t on t.employee_id = e.employee_id " +
                 " LEFT JOIN project p on p.project_id = t.project_id " +
@@ -57,27 +59,15 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long> {
                 " WHERE 1 = 1 ")
                 ;
         if(departmentId != null) {
-            sqlQuery.append(" and d.department_id = " + departmentId);
+            sqlQuery.append(" and d.department_id = ").append(departmentId);
         }
         if(projectId != null) {
-            sqlQuery.append(" and p.project_id = " + projectId);
+            sqlQuery.append(" and p.project_id = ").append(projectId);
         }
         sqlQuery.append(" GROUP BY e.employee_id");
 
-        if(sortType != null && sortType.equalsIgnoreCase("desc")) {
-            sortType = " DESC";
-        }else{
-            sortType = " ASC";
-        }
-        if(sortBy != null) {
-            sqlQuery.append(" ORDER BY ");
-            for (int i = 0; i < sortBy.size(); i++) {
-                if(i != 0) {
-                    sqlQuery.append(", ");
-                }
-                sqlQuery.append(sortBy.get(i) + " " + sortType);
-            }
-        }
+        sqlQuery.append(createSortAndOrderQuery(sortType, sortBy));
+
         sqlQuery.append(" LIMIT ").append(limit);
         sqlQuery.append(" OFFSET ").append(offset);
 
@@ -85,11 +75,9 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long> {
 
         return (List<EmployeeBean>) queryNative
                 .getResultStream()
-                .map(e -> new EmployeeBean(e))
+                .map(EmployeeBean::new)
                 .collect(Collectors.toList());
     }
-
-    Optional<Employees> findByEmail(String email);
 
     default Long countByCondition(EntityManager entityManager, Long departmentId, Long projectId){
 
@@ -101,10 +89,10 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long> {
                 " LEFT JOIN customer c on c.customer_id = p.customer_id" +
                 " WHERE 1 = 1 ");
         if(departmentId != null){
-            sql.append(" and e.department_id = " + departmentId);
+            sql.append(" and e.department_id = ").append(departmentId);
         }
         if(projectId != null){
-            sql.append(" and t.project_id = " + projectId);
+            sql.append(" and t.project_id = ").append(projectId);
         }
 
         javax.persistence.Query sqlNative = entityManager.createNativeQuery(sql.toString());
@@ -113,4 +101,5 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long> {
 
         return total.longValue();
     }
+
 }

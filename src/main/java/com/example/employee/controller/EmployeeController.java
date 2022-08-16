@@ -2,9 +2,8 @@ package com.example.employee.controller;
 
 import com.example.employee.model.exception.ResourceNotFoundException;
 import com.example.employee.model.payload.EmployeeRequest;
-import com.example.employee.repository.EmployeeRepository;
 import com.example.employee.service.EmployeeService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,23 +13,18 @@ import javax.persistence.EntityManager;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/employees")
 public class EmployeeController {
 
-    @Autowired
-    EmployeeService employeeService;
-
-    @Autowired
-    EmployeeRepository employeeRepository;
-
-    @Autowired
-    EntityManager entityManager;
+    private final EmployeeService employeeService;
+    private final EntityManager entityManager;
 
     @GetMapping("/{employeeId}")
     public ResponseEntity<?> getEmployee(
             @PathVariable("employeeId") Long employeeId)
             throws ResourceNotFoundException {
-        return ResponseEntity.ok(employeeService.getEmployeeBean(entityManager, employeeId));
+        return ResponseEntity.ok(employeeService.getEmployee(entityManager, employeeId));
     }
 
     @GetMapping("")

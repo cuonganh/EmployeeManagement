@@ -1,5 +1,6 @@
 package com.example.employee.model.entity;
 
+import com.example.employee.common.enumerate.EPriorityLevel;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -20,7 +21,7 @@ public class Projects {
     private String name;
 
     @Column(name = "priority_level")
-    private String priorityLevel;
+    private EPriorityLevel priorityLevel;
 
     @Column(name = "man_day")
     private Long manDay;

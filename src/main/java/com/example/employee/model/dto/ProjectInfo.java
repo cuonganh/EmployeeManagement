@@ -1,11 +1,21 @@
 package com.example.employee.model.dto;
 
-import lombok.Data;
+import com.example.employee.common.enumerate.EPriorityLevel;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class ProjectInfo {
+
     Long projectId;
+
     String projectName;
+
     String customer;
+
     Long manDay;
+
+    EPriorityLevel priorityLevel;
+
 }

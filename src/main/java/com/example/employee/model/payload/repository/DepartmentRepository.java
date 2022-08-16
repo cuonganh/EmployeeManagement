@@ -1,4 +1,4 @@
-package com.example.employee.repository;
+package com.example.employee.model.payload.repository;
 
 import com.example.employee.model.dto.DepartmentBean;
 import com.example.employee.model.entity.Departments;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Repository
-public interface DepartmentRepository extends JpaRepository<Departments, Long> {
+public interface DepartmentRepository extends JpaRepository<Departments, Long>, AbstractRepository {
 
     default List<DepartmentBean> getAllDepartmentBeen(
             EntityManager entityManager,
@@ -49,10 +49,11 @@ public interface DepartmentRepository extends JpaRepository<Departments, Long> {
             String sortType,
             List<String> sortBy
     ){
-        StringBuilder sqlQuery = new StringBuilder("SELECT COUNT(department_id) " );
-        sqlQuery.append(createDepartmentQuery(member, name, sortType, sortBy));
 
-        javax.persistence.Query sqlNative = entityManager.createNativeQuery(sqlQuery.toString());
+        javax.persistence.Query sqlNative = entityManager.createNativeQuery(
+                "SELECT COUNT(department_id) " +
+                        createDepartmentQuery(member, name, sortType, sortBy)
+        );
 
         BigInteger total = (BigInteger) sqlNative.getSingleResult();
 
@@ -72,20 +73,8 @@ public interface DepartmentRepository extends JpaRepository<Departments, Long> {
         if(member != null) {
             sqlQuery.append(" AND member = ").append(member);
         }
-        if(sortType != null && sortType.equalsIgnoreCase("desc")) {
-            sortType = " DESC";
-        }else{
-            sortType = " ASC";
-        }
-        if(sortBy != null) {
-            sqlQuery.append(" ORDER BY ");
-            for (int i = 0; i < sortBy.size(); i++) {
-                if(i != 0) {
-                    sqlQuery.append(", ");
-                }
-                sqlQuery.append(sortBy.get(i) + " " + sortType);
-            }
-        }
+        sqlQuery.append(createSortAndOrderQuery(sortType, sortBy));
+
         return sqlQuery;
     }
 

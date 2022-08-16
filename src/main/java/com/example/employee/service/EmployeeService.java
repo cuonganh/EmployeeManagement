@@ -1,7 +1,7 @@
 package com.example.employee.service;
 
 import com.example.employee.common.Constant;
-import com.example.employee.common.converter.EmployeeDtoConverter;
+import com.example.employee.common.enumerate.EEmployee;
 import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.dto.EmployeeDto;
 import com.example.employee.model.dto.PageDto;
@@ -12,17 +12,16 @@ import com.example.employee.model.entity.Teams;
 import com.example.employee.model.exception.ResourceNotFoundException;
 import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.model.payload.EmployeeResponse;
-import com.example.employee.repository.EmployeeRepository;
-import com.example.employee.repository.ProjectRepository;
-import com.example.employee.repository.TeamRepository;
+import com.example.employee.model.payload.repository.EmployeeRepository;
+import com.example.employee.model.payload.repository.ProjectRepository;
+import com.example.employee.model.payload.repository.TeamRepository;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,36 +29,28 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
+@RequiredArgsConstructor
 public class EmployeeService {
-    @Autowired
-    EmployeeRepository employeeRepository;
-
-    @Autowired
-    ProjectRepository projectRepository;
-
-    @Autowired
-    TeamRepository teamRepository;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    EmployeeDtoConverter employeeDtoConverter;
+    private final EmployeeRepository employeeRepository;
+    private final ProjectRepository projectRepository;
+    private final TeamRepository teamRepository;
+    private final EntityManager entityManager;
 
     @Value("${exportFolder}")
     String exportFolder;
 
 
-
     private final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
 
-    public EmployeeResponse<List<EmployeeBean>> getEmployeeBean(
+    public EmployeeResponse<List<EmployeeBean>> getEmployee(
             EntityManager entityManager,
             Long employeeId
     ) throws ResourceNotFoundException {
@@ -85,24 +76,13 @@ public class EmployeeService {
     ) {
         LOGGER.info(Constant.START);
         LOGGER.info("Get employees list");
-        Sort.Direction direction = Sort.Direction.DESC;
 
-        if(limit == null){
-            limit = 10;
-        }
-        if(offset == null){
-            offset = 0;
-        }
-        if(sort != null){
-            if(sort.equalsIgnoreCase("asc")){
-                direction = Sort.Direction.ASC;
-            }
-        }
+        if(limit == null) limit = 10;
+        if(offset == null) offset = 0;
         if(CollectionUtils.isEmpty(sortBy)){
             sortBy = new ArrayList<>();
             sortBy.add("employeeId");
         }
-
         List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
                 entityManager,
                 departmentId,
@@ -117,15 +97,14 @@ public class EmployeeService {
         return new PageDto<>(200, "Found employees", limit, offset, total, employees);
     }
 
-
     @Transactional
     public EmployeeResponse<Employees> createEmployee(EmployeeRequest employeeRequest) {
         LOGGER.info(Constant.START);
         LOGGER.info("Create employee" + employeeRequest);
         String email = employeeRequest.getEmail();
-        if(!checkRegex(Constant.REGEX_EMAIL, email)) {
+        /*if(!isValidRegex(email)) {
             return new EmployeeResponse<>(400,"Email is invalid");
-        }
+        }*/
         List<ProjectInfo> projects = employeeRequest.getProjects();
         Optional<Employees> employee = employeeRepository.findByEmail(email);
         if(employee.isPresent()) {
@@ -151,9 +130,9 @@ public class EmployeeService {
         return new EmployeeResponse<>(200, "Created employee");
     }
 
-    private boolean checkRegex(String regex, String value) {
+    private boolean isValidRegex(String value) {
         boolean result = false;
-        Pattern regexGMT = Pattern.compile(regex);
+        Pattern regexGMT = Pattern.compile(Constant.REGEX_EMAIL);
         Matcher matchFoundGMT = regexGMT.matcher(value);
         // isDate
         if (matchFoundGMT.find()) {
@@ -170,7 +149,7 @@ public class EmployeeService {
         if(!employeeOptional.isPresent()) {
             return new EmployeeResponse<>(404,"Employee with employeeId " + employeeId + " does not exist");
         }
-        Employees employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest, employeeId);
+        Employees employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest);
         employeeRepository.save(employeeNew);
 
         /*
@@ -178,7 +157,7 @@ public class EmployeeService {
         clear all projects and update projects for this employee on team entity
         */
         List<ProjectInfo> projects = employeeRequest.getProjects();
-        if(projects.size() > 0) {
+        if(projects != null && projects.size() > 0) {
             teamRepository.deleteByEmployeeId(employeeId);
             for(ProjectInfo projectInfo : projects) {
                 Optional<Projects> oldProject = projectRepository.findById(projectInfo.getProjectId());
@@ -210,9 +189,9 @@ public class EmployeeService {
         return new EmployeeResponse<>(200, "Deleted employee");
     }
 
-
     public EmployeeResponse<Employees> importEmployees(MultipartFile file) {
-
+        LOGGER.info(Constant.START);
+        LOGGER.info("Import employees");
         try {
             List<Employees> employees = csvToEmployees(file.getInputStream());
             for (Employees employee : employees) {
@@ -226,45 +205,25 @@ public class EmployeeService {
         } catch (IOException e) {
             throw new RuntimeException("Fail to store csv data: " + e.getMessage());
         }
-
         LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Imported employees");
     }
 
     public boolean hasCSVFormat(MultipartFile file) {
-        if (!Constant.CSV_TYPE.equals(file.getContentType())) {
-            return false;
-        }
-        return true;
+        return Constant.CSV_TYPE.equals(file.getContentType());
     }
 
     private List<Employees> csvToEmployees(InputStream is) {
-        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
              CSVParser csvParser = new CSVParser(fileReader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
             List<Employees> employees = new ArrayList<>();
             Iterable<CSVRecord> csvRecords = csvParser.getRecords();
             for (CSVRecord csvRecord : csvRecords) {
                 try{
-                    Employees employee = new Employees();
-                    //Skip with record missing value
-                    if(csvRecord.get("departmentId").trim().equals("")
-                            || csvRecord.get("firstName").trim().equals("")
-                            || csvRecord.get("lastName").trim().equals("")
-                            || csvRecord.get("dateOfBirth").trim().equals("")
-                            || csvRecord.get("address").trim().equals("")
-                            || csvRecord.get("email").trim().equals("")
-                            || !checkRegex(Constant.REGEX_EMAIL, csvRecord.get("email").trim())
-                            || csvRecord.get("phoneNumber").trim().equals("")){
+                    if(!isCSVRecordValid(csvRecord)){
                         continue;
                     }
-                    employee.setDepartmentId(Long.parseLong(csvRecord.get("departmentId").trim()));
-                    employee.setFirstName(csvRecord.get("firstName").trim());
-                    employee.setLastName(csvRecord.get("lastName").trim());
-                    employee.setDateOfBirth(Date.valueOf(csvRecord.get("dateOfBirth").trim()));
-                    employee.setAddress(csvRecord.get("address").trim());
-                    employee.setEmail(csvRecord.get("email").trim());
-                    employee.setPhoneNumber(csvRecord.get("phoneNumber").trim());
-                    employees.add(employee);
+                    employees.add(saveValueFromCSVRow(csvRecord));
                 }catch (Exception e){
                     e.printStackTrace();
                 }
@@ -275,6 +234,29 @@ public class EmployeeService {
         }
     }
 
+    private Employees saveValueFromCSVRow(CSVRecord csvRecord) {
+        Employees employee = new Employees();
+        employee.setDepartmentId(Long.parseLong(csvRecord.get(EEmployee.DEPARTMENT_ID.getValue()).trim()));
+        employee.setFirstName(csvRecord.get(EEmployee.FIRST_NAME.getValue()).trim());
+        employee.setLastName(csvRecord.get(EEmployee.LAST_NAME.getValue()).trim());
+        employee.setDateOfBirth(Date.valueOf(csvRecord.get(EEmployee.DATE_OF_BIRTH.getValue()).trim()));
+        employee.setAddress(csvRecord.get(EEmployee.ADDRESS.getValue()).trim());
+        employee.setEmail(csvRecord.get(EEmployee.EMAIL).trim());
+        employee.setPhoneNumber(csvRecord.get(EEmployee.PHONE_NUMBER.getValue()).trim());
+        return employee;
+    }
+
+    private boolean isCSVRecordValid(CSVRecord csvRecord) throws IOException {
+        boolean isValid = !csvRecord.get(EEmployee.DEPARTMENT_ID.getValue()).trim().equals("")
+                && !csvRecord.get(EEmployee.FIRST_NAME.getValue()).trim().equals("")
+                && !csvRecord.get(EEmployee.LAST_NAME.getValue()).trim().equals("")
+                && !csvRecord.get(EEmployee.DATE_OF_BIRTH.getValue()).trim().equals("")
+                && !csvRecord.get(EEmployee.ADDRESS.getValue()).trim().equals("")
+                && !csvRecord.get(EEmployee.EMAIL.getValue()).trim().equals("")
+                && isValidRegex(csvRecord.get(EEmployee.EMAIL.getValue()).trim())
+                && !csvRecord.get(EEmployee.PHONE_NUMBER.getValue()).trim().equals("");
+        return isValid;
+    }
 
     public EmployeeResponse<?> exportEmployees(
             Long departmentId,
@@ -285,8 +267,10 @@ public class EmployeeService {
             String sort,
             List<String> sortBy) {
 
-        String directionFile = exportFolder + "output.csv";
+        LOGGER.info(Constant.START);
+        LOGGER.info("Export Employees");
         try {
+            String directionFile = exportFolder + LocalDate.now() + ".csv";
             PrintWriter csvWriter = new PrintWriter(directionFile);
             StringBuilder stringBuilder = new StringBuilder();
             List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
@@ -298,39 +282,14 @@ public class EmployeeService {
                     sort,
                     sortBy
             );
-
-            if(exportFields.length > 0) {
-                //get the export fields header
-                for(int i = 0; i < exportFields.length; i++) {
-                    if(isEmployeeColumns(exportFields[i])) {
-                        stringBuilder.append(exportFields[i]);
-                        stringBuilder.append(",");
-                    }
-                }
-                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+            if(exportFields != null && exportFields.length > 0) {
+                stringBuilder.append(createCSVHeaderOption(exportFields));
                 stringBuilder.append("\n");
-                //export value for these export fields
-                for (EmployeeBean employee : employees) {
-                    for (int i = 0; i < exportFields.length; i++) {
-                        if(isEmployeeColumns(exportFields[i])){
-                            stringBuilder.append(exportColumnValue(employee, exportFields[i]));
-                            stringBuilder.append(",");
-                        }
-                    }
-                    stringBuilder.deleteCharAt(stringBuilder.length()-1);
-                    stringBuilder.append("\n");
-                }
+                stringBuilder.append(exportColumnValueOption(employees, exportFields));
             }else{
                 stringBuilder.append(Constant.EMPLOYEE_HEADER_NAME);
                 for (EmployeeBean employee : employees) {
-                    stringBuilder.append("\n").append(employee.getEmployeeId());
-                    stringBuilder.append(",").append(employee.getDepartment());
-                    stringBuilder.append(",").append(employee.getFirstName());
-                    stringBuilder.append(",").append(employee.getLastName());
-                    stringBuilder.append(",").append(employee.getDateOfBirth());
-                    stringBuilder.append(",").append(employee.getAddress());
-                    stringBuilder.append(",").append(employee.getEmail());
-                    stringBuilder.append(",").append(employee.getPhoneNumber());
+                    stringBuilder.append(exportColumnsValue(employee));
                 }
             }
             csvWriter.println(stringBuilder);
@@ -338,54 +297,95 @@ public class EmployeeService {
         }catch (Exception e) {
             return new EmployeeResponse<>(400, "Error when export Employees");
         }
+        LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Export Employees successfully");
     }
 
     private boolean isEmployeeColumns(String field){
         Map<String, String> employeeColumns = new HashMap<>();
-        employeeColumns.put("employeeId", "employeeId");
-        employeeColumns.put("departmentId", "departmentId");
-        employeeColumns.put("department", "department");
-        employeeColumns.put("firstName", "firstName");
-        employeeColumns.put("lastName", "lastName");
-        employeeColumns.put("dateOfBirth", "dateOfBirth");
-        employeeColumns.put("address", "address");
-        employeeColumns.put("email", "email");
-        employeeColumns.put("phoneNumber", "phoneNumber");
+        employeeColumns.put("employeeId", EEmployee.EMPLOYEE_ID.getValue());
+        employeeColumns.put("departmentId", EEmployee.DEPARTMENT_ID.getValue());
+        employeeColumns.put("department", EEmployee.DEPARTMENT.getValue());
+        employeeColumns.put("firstName", EEmployee.FIRST_NAME.getValue());
+        employeeColumns.put("lastName", EEmployee.LAST_NAME.getValue());
+        employeeColumns.put("dateOfBirth", EEmployee.DATE_OF_BIRTH.getValue());
+        employeeColumns.put("address", EEmployee.ADDRESS.getValue());
+        employeeColumns.put("email", EEmployee.EMAIL.getValue());
+        employeeColumns.put("phoneNumber", EEmployee.PHONE_NUMBER.getValue());
 
-        if(field.equalsIgnoreCase(employeeColumns.get(field))) {
-            return true;
-        }
-        return false;
+        return field.equalsIgnoreCase(employeeColumns.get(field));
     }
 
-    private StringBuilder exportColumnValue(EmployeeBean employeeBean, String field){
-        StringBuilder result = new StringBuilder();
-        if(field.equalsIgnoreCase("employeeId")){
-            result.append(employeeBean.getEmployeeId());
+    private StringBuilder createCSVHeaderOption(String[] exportFields){
+        StringBuilder csvHeaderOption = new StringBuilder();
+        for (String exportField : exportFields) {
+            if (isEmployeeColumns(exportField)) {
+                csvHeaderOption.append(exportField);
+                csvHeaderOption.append(",");
+            }
         }
-        if(field.equalsIgnoreCase("department")){
-            result.append(employeeBean.getDepartment());
+        csvHeaderOption.deleteCharAt(csvHeaderOption.length() - 1);
+        return csvHeaderOption;
+    }
+
+    private StringBuilder exportColumnValueOption(List<EmployeeBean> employees, String[] exportFields) {
+        StringBuilder csvRowOption = new StringBuilder();
+        for (EmployeeBean employee : employees) {
+            for (String exportField : exportFields) {
+                if (isEmployeeColumns(exportField)) {
+                    csvRowOption.append(exportOptionColumnValue(employee, exportField));
+                    csvRowOption.append(",");
+                }
+            }
+            csvRowOption.deleteCharAt(csvRowOption.length()-1);
+            csvRowOption.append("\n");
         }
-        if(field.equalsIgnoreCase("firstName")){
-            result.append(employeeBean.getFirstName());
+        return csvRowOption;
+    }
+
+    private StringBuilder exportOptionColumnValue(EmployeeBean employeeBean, String field){
+        StringBuilder columnValueOption = new StringBuilder();
+        if(field.equalsIgnoreCase(EEmployee.EMPLOYEE_ID.getValue())){
+            columnValueOption.append(employeeBean.getEmployeeId());
         }
-        if(field.equalsIgnoreCase("lastName")){
-            result.append(employeeBean.getLastName());
+        if(field.equalsIgnoreCase(EEmployee.DEPARTMENT.getValue())){
+            columnValueOption.append(employeeBean.getDepartment());
         }
-        if(field.equalsIgnoreCase("dateOfBirth")){
-            result.append(employeeBean.getDateOfBirth());
+        if(field.equalsIgnoreCase(EEmployee.FIRST_NAME.getValue())){
+            columnValueOption.append(employeeBean.getFirstName());
         }
-        if(field.equalsIgnoreCase("address")){
-            result.append(employeeBean.getAddress());
+        if(field.equalsIgnoreCase(EEmployee.LAST_NAME.getValue())){
+            columnValueOption.append(employeeBean.getLastName());
         }
-        if(field.equalsIgnoreCase("email")){
-            result.append(employeeBean.getEmail());
+        if(field.equalsIgnoreCase(EEmployee.DATE_OF_BIRTH.getValue())){
+            columnValueOption.append(employeeBean.getDateOfBirth());
         }
-        if(field.equalsIgnoreCase("phoneNumber")){
-            result.append(employeeBean.getPhoneNumber());
+        if(field.equalsIgnoreCase(EEmployee.ADDRESS.getValue())){
+            columnValueOption.append(employeeBean.getAddress());
         }
-        return result;
+        if(field.equalsIgnoreCase(EEmployee.EMAIL.getValue())){
+            columnValueOption.append(employeeBean.getEmail());
+        }
+        if(field.equalsIgnoreCase(EEmployee.PHONE_NUMBER.getValue())){
+            columnValueOption.append(employeeBean.getPhoneNumber());
+        }
+        return columnValueOption;
+    }
+
+    private StringBuilder exportColumnsValue(EmployeeBean employee){
+
+        StringBuilder columnsValue = new StringBuilder();
+
+        columnsValue.append("\n").append(employee.getEmployeeId());
+        columnsValue.append(",").append(employee.getDepartment());
+        columnsValue.append(",").append(employee.getFirstName());
+        columnsValue.append(",").append(employee.getLastName());
+        columnsValue.append(",").append(employee.getDateOfBirth());
+        columnsValue.append(",").append(employee.getAddress());
+        columnsValue.append(",").append(employee.getEmail());
+        columnsValue.append(",").append(employee.getPhoneNumber());
+
+        return columnsValue;
     }
 
 
