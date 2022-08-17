@@ -10,6 +10,7 @@ import com.example.employee.model.entity.Employees;
 import com.example.employee.model.entity.Projects;
 import com.example.employee.model.entity.Teams;
 import com.example.employee.model.exception.ResourceNotFoundException;
+import com.example.employee.model.exception.ValidationException;
 import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.model.payload.EmployeeResponse;
 import com.example.employee.model.payload.repository.EmployeeRepository;
@@ -30,7 +31,6 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.sql.Date;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -57,7 +57,7 @@ public class EmployeeService {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Get employee by id: " + employeeId);
-        List<EmployeeBean> employeeBeen = employeeRepository.getEmployeeBeen(entityManager, employeeId);
+        List<EmployeeBean> employeeBeen = employeeRepository.getEmployee(entityManager, employeeId);
         if(employeeBeen.get(0).getEmployeeId() == null) {
             throw new ResourceNotFoundException();
         }
@@ -98,34 +98,25 @@ public class EmployeeService {
     }
 
     @Transactional
-    public EmployeeResponse<Employees> createEmployee(EmployeeRequest employeeRequest) {
+    public EmployeeResponse<Employees> createEmployee(EmployeeRequest employeeRequest) throws ValidationException {
         LOGGER.info(Constant.START);
         LOGGER.info("Create employee" + employeeRequest);
-        String email = employeeRequest.getEmail();
-        /*if(!isValidRegex(email)) {
-            return new EmployeeResponse<>(400,"Email is invalid");
-        }*/
-        List<ProjectInfo> projects = employeeRequest.getProjects();
-        Optional<Employees> employee = employeeRepository.findByEmail(email);
+
+        if(!employeeRequest.isValidateCreateEmployeeRequest(employeeRequest)){
+            throw new ValidationException(Collections.singletonList("Bad request"));
+        }
+
+        Optional<Employees> employee = employeeRepository.findByEmail(employeeRequest.getEmail());
         if(employee.isPresent()) {
-            return new EmployeeResponse<>(400,"Bad request. Email is already in use");
+            throw new ValidationException(Collections.singletonList("Email was used"));
         }
         Employees employeeNew = employeeRequest.convertToEmployeeEntity(employeeRequest);
         employeeRepository.save(employeeNew);
+
         Long employeeId = employeeNew.getEmployeeId();
-        if(projects.size() > 0) {
-            for(ProjectInfo projectInfo : projects) {
-                try{
-                    Long projectId = projectInfo.getProjectId();
-                    Teams newTeam = new Teams();
-                    newTeam.setEmployeeId(employeeId);
-                    newTeam.setProjectId(projectId);
-                    teamRepository.save(newTeam);
-                }catch (Exception e){
-                    LOGGER.error(e.getMessage(), e);
-                }
-            }
-        }
+        List<ProjectInfo> projects = employeeRequest.getProjects();
+        addProjectsForEmployee(projects, employeeId);
+
         LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Created employee");
     }
@@ -141,17 +132,56 @@ public class EmployeeService {
         return result;
     }
 
+    private void addProjectsForEmployee(List<ProjectInfo> projects, long employeeId){
+        if(projects != null && projects.size() > 0) {
+            for(ProjectInfo projectInfo : projects) {
+                Long projectId = Long.valueOf(projectInfo.getProjectId());
+                Teams newTeam = new Teams();
+                newTeam.setEmployeeId(employeeId);
+                newTeam.setProjectId(projectId);
+                teamRepository.save(newTeam);
+            }
+        }
+    }
+
     @Transactional
-    public EmployeeResponse<Employees> updateEmployee(EmployeeRequest employeeRequest, Long employeeId) {
+    public EmployeeResponse<Employees> updateEmployee(EmployeeRequest employeeRequest, Long employeeId) throws ResourceNotFoundException, ValidationException {
         LOGGER.info(Constant.START);
         LOGGER.info("Update for employee with employeeId " + employeeId);
+
+        if(!employeeRequest.isValidateUpdateEmployee(employeeRequest)){
+            throw new ValidationException(Collections.singletonList("Bad request"));
+        }
         Optional<Employees> employeeOptional = employeeRepository.findById(employeeId);
         if(!employeeOptional.isPresent()) {
-            return new EmployeeResponse<>(404,"Employee with employeeId " + employeeId + " does not exist");
+            throw new ResourceNotFoundException("EmployeeId " + employeeId + " does not exist");
         }
+        if(!canUpdateThisEmail(employeeRequest, employeeId)){
+            throw new ValidationException(Collections.singletonList("Email was used"));
+        }
+
         Employees employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest);
         employeeRepository.save(employeeNew);
 
+        updateProjects(employeeRequest, employeeId);
+
+        LOGGER.info(Constant.END);
+        return new EmployeeResponse<>(200, "Updated employee");
+    }
+
+    private boolean canUpdateThisEmail(EmployeeRequest employeeRequest, Long employeeId) {
+        boolean updated = true;
+        Optional<Employees> employeeOptionalEmail = employeeRepository.findByEmail(employeeRequest.getEmail());
+        if(employeeOptionalEmail.isPresent()) {
+            long employeeIdNew = employeeOptionalEmail.get().getEmployeeId();
+            if(employeeId != employeeIdNew) {
+                updated = false;
+            }
+        }
+        return updated;
+    }
+
+    private void updateProjects(EmployeeRequest employeeRequest, long employeeId){
         /*
         default keep all projects and only update projects when
         clear all projects and update projects for this employee on team entity
@@ -160,19 +190,17 @@ public class EmployeeService {
         if(projects != null && projects.size() > 0) {
             teamRepository.deleteByEmployeeId(employeeId);
             for(ProjectInfo projectInfo : projects) {
-                Optional<Projects> oldProject = projectRepository.findById(projectInfo.getProjectId());
+                Optional<Projects> oldProject = projectRepository.findById(Long.valueOf(projectInfo.getProjectId()));
                 if(oldProject.isPresent()) {
                     Teams teamNew = new Teams();
                     teamNew.setEmployeeId(employeeId);
-                    teamNew.setProjectId(projectInfo.getProjectId());
+                    teamNew.setProjectId(Long.valueOf(projectInfo.getProjectId()));
                     teamRepository.save(teamNew);
                 }else{
-                    LOGGER.error("Not found projectId " + projectInfo.getProjectId() + "on team entity");
+                    LOGGER.error("ProjectId " + projectInfo.getProjectId() + " does not exist");
                 }
             }
         }
-        LOGGER.info(Constant.END);
-        return new EmployeeResponse<>(200, "Updated employee");
     }
 
     @Transactional
@@ -181,7 +209,7 @@ public class EmployeeService {
         LOGGER.info("Delete employee " + employeeId);
         Optional<Employees> employee = employeeRepository.findById(employeeId);
         if(!employee.isPresent()) {
-            return new EmployeeResponse<>(404, "Resource not found");
+            throw new ResourceNotFoundException("Resource not found");
         }
         employeeRepository.deleteById(employeeId);
         teamRepository.deleteByEmployeeId(employeeId);
@@ -239,7 +267,7 @@ public class EmployeeService {
         employee.setDepartmentId(Long.parseLong(csvRecord.get(EEmployee.DEPARTMENT_ID.getValue()).trim()));
         employee.setFirstName(csvRecord.get(EEmployee.FIRST_NAME.getValue()).trim());
         employee.setLastName(csvRecord.get(EEmployee.LAST_NAME.getValue()).trim());
-        employee.setDateOfBirth(Date.valueOf(csvRecord.get(EEmployee.DATE_OF_BIRTH.getValue()).trim()));
+        employee.setDateOfBirth(LocalDate.parse((csvRecord.get(EEmployee.DATE_OF_BIRTH.getValue()).trim())));
         employee.setAddress(csvRecord.get(EEmployee.ADDRESS.getValue()).trim());
         employee.setEmail(csvRecord.get(EEmployee.EMAIL).trim());
         employee.setPhoneNumber(csvRecord.get(EEmployee.PHONE_NUMBER.getValue()).trim());
@@ -265,7 +293,7 @@ public class EmployeeService {
             Integer limit,
             Integer offset,
             String sort,
-            List<String> sortBy) {
+            List<String> sortBy) throws FileNotFoundException {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Export Employees");
@@ -294,8 +322,8 @@ public class EmployeeService {
             }
             csvWriter.println(stringBuilder);
             csvWriter.close();
-        }catch (Exception e) {
-            return new EmployeeResponse<>(400, "Error when export Employees");
+        }catch (IOException e) {
+            throw new FileNotFoundException("Error when export Employees");
         }
         LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Export Employees successfully");

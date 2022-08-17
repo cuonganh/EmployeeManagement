@@ -56,11 +56,11 @@ public class EmployeeBean {
                 ProjectInfo projectInfo = new ProjectInfo();
                 List<String> properties = Arrays.asList(element.split(","));
                 if(properties.size() == 5){
-                    projectInfo.setProjectId(Long.valueOf(properties.get(0)));
+                    projectInfo.setProjectId(properties.get(0));
                     projectInfo.setProjectName(properties.get(1));
                     projectInfo.setCustomer(properties.get(2));
-                    projectInfo.setManDay(Long.valueOf(properties.get(3)));
-                    projectInfo.setPriorityLevel(EPriorityLevel.valueOf(properties.get(4)));
+                    projectInfo.setManDay(properties.get(3));
+                    projectInfo.setPriorityLevel(properties.get(4));
                     projects.add(projectInfo);
                 }
             }

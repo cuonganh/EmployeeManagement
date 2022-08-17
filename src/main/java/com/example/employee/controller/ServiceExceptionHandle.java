@@ -13,11 +13,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.io.FileNotFoundException;
+import java.time.format.DateTimeParseException;
+
 @RestControllerAdvice
 public class ServiceExceptionHandle {
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ExceptionHandler({ResourceNotFoundException.class})
+    @ExceptionHandler({ResourceNotFoundException.class, FileNotFoundException.class})
     @ResponseBody
     private ExceptionResponse resourceNotFoundException(ResourceNotFoundException exception) {
         ExceptionResponse exceptionResponse = new ExceptionResponse();
@@ -39,6 +42,7 @@ public class ServiceExceptionHandle {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler({
             ValidationException.class,
+            DateTimeParseException.class,
             ValidationBindingException.class,
             HttpMessageNotReadableException.class,
             MethodArgumentTypeMismatchException.class

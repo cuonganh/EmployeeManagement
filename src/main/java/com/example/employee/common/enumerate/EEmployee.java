@@ -13,7 +13,7 @@ public enum EEmployee {
     PHONE_NUMBER("phoneNumber")
     ;
 
-    private String value;
+    private final String value;
 
     EEmployee(String value) {
         this.value = value;

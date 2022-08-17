@@ -24,14 +24,5 @@ public class PageDto <T>{
         this.result = data;
     }
 
-    public PageDto(Page page, int code, String message, List<?> data, long total) {
-        this.code = code;
-        this.message = message;
-        this.limit = page.getSize();
-        this.offset = page.getNumber();
-        this.total = total;
-        this.result = data;
-    }
-
 
 }
