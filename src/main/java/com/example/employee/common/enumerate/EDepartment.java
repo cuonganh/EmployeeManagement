@@ -9,7 +9,7 @@ public enum EDepartment {
     LEADER("leader")
     ;
 
-    private String value;
+    private final String value;
 
     EDepartment(String value) {
         this.value = value;

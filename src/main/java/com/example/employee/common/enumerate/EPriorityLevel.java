@@ -7,7 +7,7 @@ public enum EPriorityLevel {
     HIGH("HIGH")
     ;
 
-    private String level;
+    private final String level;
 
     EPriorityLevel(String level) {
         this.level = level;

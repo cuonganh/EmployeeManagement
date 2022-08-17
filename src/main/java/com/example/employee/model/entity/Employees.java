@@ -1,10 +1,12 @@
 package com.example.employee.model.entity;
 
+import com.example.employee.model.exception.ValidationException;
 import com.example.employee.model.payload.EmployeeRequest;
 import lombok.Data;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDate;
+import java.util.Collections;
 
 @Entity(name = "employee")
 @Data
@@ -24,7 +26,7 @@ public class Employees {
     private String lastName;
 
     @Column(name = "date_of_birth")
-    private Date dateOfBirth;
+    private LocalDate dateOfBirth;
 
     @Column(name = "address")
     private String address;
@@ -43,7 +45,7 @@ public class Employees {
             Long departmentId,
             String firstName,
             String lastName,
-            Date dateOfBirth,
+            LocalDate dateOfBirth,
             String address,
             String email,
             String phoneNumber
@@ -58,23 +60,29 @@ public class Employees {
     }
 
 
-    public Employees getUpdateEmployee(EmployeeRequest employeeRequest){
+    public Employees getUpdateEmployee(EmployeeRequest employeeRequest) throws ValidationException {
 
-        if(employeeRequest.getDepartmentId() != null) this.departmentId = Long.valueOf(employeeRequest.getDepartmentId());
+        try{
+            if(employeeRequest.getDepartmentId() != null) this.departmentId = Long.valueOf(employeeRequest.getDepartmentId());
 
-        if(employeeRequest.getFirstName()!=null) this.firstName = employeeRequest.getFirstName();
+            if(employeeRequest.getFirstName()!=null) this.firstName = employeeRequest.getFirstName();
 
-        if(employeeRequest.getLastName()!=null) this.lastName = employeeRequest.getLastName();
+            if(employeeRequest.getLastName()!=null) this.lastName = employeeRequest.getLastName();
 
-        if(employeeRequest.getDateOfBirth()!=null) this.dateOfBirth = employeeRequest.getDateOfBirth();
+            if(employeeRequest.getDateOfBirth()!=null) this.dateOfBirth = LocalDate.parse(employeeRequest.getDateOfBirth());
 
-        if(employeeRequest.getAddress()!=null) this.address = employeeRequest.getAddress();
+            if(employeeRequest.getAddress()!=null) this.address = employeeRequest.getAddress();
 
-        if(employeeRequest.getEmail()!=null) this.email = employeeRequest.getEmail();
+            if(employeeRequest.getEmail()!=null) this.email = employeeRequest.getEmail();
 
-        if(employeeRequest.getPhoneNumber()!=null) this.phoneNumber = employeeRequest.getPhoneNumber();
+            if(employeeRequest.getPhoneNumber()!=null) this.phoneNumber = employeeRequest.getPhoneNumber();
 
-        return this;
+            return this;
+        }catch (Exception e) {
+            throw new ValidationException(Collections.singletonList("Invalid request"));
+
+        }
+
     }
 
 

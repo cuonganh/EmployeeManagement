@@ -1,6 +1,7 @@
 package com.example.employee.controller;
 
 import com.example.employee.model.exception.ResourceNotFoundException;
+import com.example.employee.model.exception.ValidationException;
 import com.example.employee.model.payload.EmployeeRequest;
 import com.example.employee.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
+import java.io.FileNotFoundException;
 import java.util.List;
 
 @RestController
@@ -51,14 +53,14 @@ public class EmployeeController {
 
     @PostMapping
     public ResponseEntity<?> createEmployee(
-            @RequestBody EmployeeRequest employeeRequest) {
+            @RequestBody EmployeeRequest employeeRequest) throws ValidationException {
         return ResponseEntity.ok(employeeService.createEmployee(employeeRequest));
     }
 
     @PatchMapping(value = "/{employeeId}")
     public ResponseEntity<?> updateEmployee(
             @PathVariable("employeeId") Long employeeId,
-            @RequestBody EmployeeRequest employeeRequest) {
+            @RequestBody EmployeeRequest employeeRequest) throws ResourceNotFoundException, ValidationException {
         return ResponseEntity.ok(employeeService.updateEmployee(employeeRequest, employeeId));
     }
 
@@ -96,7 +98,7 @@ public class EmployeeController {
             @RequestParam(value = "offset", required = false) Integer offset,
             @RequestParam(value = "sort", required = false) String sort,
             @RequestParam(value = "sortBy", required = false) List<String> sortBy
-    ) {
+    ) throws FileNotFoundException {
         return ResponseEntity.ok(
                 employeeService.exportEmployees(
                         departmentId,

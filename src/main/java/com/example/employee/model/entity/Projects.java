@@ -21,7 +21,7 @@ public class Projects {
     private String name;
 
     @Column(name = "priority_level")
-    private EPriorityLevel priorityLevel;
+    private String priorityLevel;
 
     @Column(name = "man_day")
     private Long manDay;
