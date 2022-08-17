@@ -24,20 +24,20 @@ public class EmployeeController {
 
     @GetMapping("/{employeeId}")
     public ResponseEntity<?> getEmployee(
-            @PathVariable("employeeId") Long employeeId)
-            throws ResourceNotFoundException {
-        return ResponseEntity.ok(employeeService.getEmployee(entityManager, employeeId));
+            @PathVariable("employeeId") String employeeId)
+            throws ResourceNotFoundException, ValidationException {
+        return ResponseEntity.ok(employeeService.getEmployee(entityManager, String.valueOf(employeeId)));
     }
 
     @GetMapping("")
     public ResponseEntity<?> getEmployees(
-            @RequestParam(value = "departmentId", required = false) Long departmentId,
-            @RequestParam(value = "projectId", required = false) Long projectId,
-            @RequestParam(value = "limit", required = false) Integer limit,
-            @RequestParam(value = "offset", required = false) Integer offset,
+            @RequestParam(value = "departmentId", required = false) String departmentId,
+            @RequestParam(value = "projectId", required = false) String projectId,
+            @RequestParam(value = "limit", required = false) String limit,
+            @RequestParam(value = "offset", required = false) String offset,
             @RequestParam(value = "sort", required = false) String sort,
             @RequestParam(value = "sortBy", required = false) List<String> sortBy
-    ) {
+    ) throws ValidationException {
         return ResponseEntity.ok(
                 employeeService.getEmployees(
                 departmentId,
@@ -59,7 +59,7 @@ public class EmployeeController {
 
     @PatchMapping(value = "/{employeeId}")
     public ResponseEntity<?> updateEmployee(
-            @PathVariable("employeeId") Long employeeId,
+            @PathVariable("employeeId") String employeeId,
             @RequestBody EmployeeRequest employeeRequest) throws ResourceNotFoundException, ValidationException {
         return ResponseEntity.ok(employeeService.updateEmployee(employeeRequest, employeeId));
     }
@@ -67,8 +67,8 @@ public class EmployeeController {
 
     @DeleteMapping("/{employeeId}")
     public ResponseEntity<?> deleteEmployee(
-            @PathVariable("employeeId") Long employeeId)
-            throws ResourceNotFoundException {
+            @PathVariable("employeeId") String employeeId)
+            throws ResourceNotFoundException, ValidationException {
         return ResponseEntity.ok(employeeService.deleteEmployee(employeeId));
     }
 
@@ -91,14 +91,14 @@ public class EmployeeController {
 
     @GetMapping("/export")
     public ResponseEntity<?> exportEmployees(
-            @RequestParam(value = "departmentId", required = false) Long departmentId,
-            @RequestParam(value = "projectId", required = false) Long projectId,
+            @RequestParam(value = "departmentId", required = false) String departmentId,
+            @RequestParam(value = "projectId", required = false) String projectId,
             @RequestParam(value = "exportFields", required = false) String[] exportFields,
-            @RequestParam(value = "limit", required = false) Integer limit,
-            @RequestParam(value = "offset", required = false) Integer offset,
+            @RequestParam(value = "limit", required = false) String limit,
+            @RequestParam(value = "offset", required = false) String offset,
             @RequestParam(value = "sort", required = false) String sort,
             @RequestParam(value = "sortBy", required = false) List<String> sortBy
-    ) throws FileNotFoundException {
+    ) throws FileNotFoundException, ValidationException {
         return ResponseEntity.ok(
                 employeeService.exportEmployees(
                         departmentId,
