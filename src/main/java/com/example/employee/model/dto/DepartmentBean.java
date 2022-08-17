@@ -9,7 +9,7 @@ public class DepartmentBean {
 
     private String name;
 
-    private String member;
+    private String members;
 
     private String description;
 
@@ -26,7 +26,7 @@ public class DepartmentBean {
             name = fields[1].toString();
         }
         if(fields[2] != null){
-            member = fields[2].toString();
+            members = fields[2].toString();
         }
         if(fields[3] != null){
             description = fields[3].toString();

@@ -1,5 +1,6 @@
 package com.example.employee.controller;
 
+import com.example.employee.model.exception.ValidationException;
 import com.example.employee.service.DepartmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,16 +20,16 @@ public class DepartmentController {
 
     @GetMapping("")
     public ResponseEntity<?> getDepartments(
-            @RequestParam(value = "member", required = false) Long member,
+            @RequestParam(value = "members", required = false) String members,
             @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "limit", required = false) Integer limit,
-            @RequestParam(value = "offset", required = false) Integer offset,
+            @RequestParam(value = "limit", required = false) String limit,
+            @RequestParam(value = "offset", required = false) String offset,
             @RequestParam(value = "sort", required = false) String sort,
             @RequestParam(value = "sortBy", required = false) List<String> sortBy
-    ){
+    ) throws ValidationException {
         return ResponseEntity.ok(
                 departmentService.getDepartments(
-                        member,
+                        members,
                         name,
                         limit,
                         offset,
