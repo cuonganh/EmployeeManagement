@@ -19,4 +19,13 @@ public enum EDepartment {
         return value;
     }
 
+    public static EDepartment getByValue(String value) {
+        for (EDepartment eDepartment : EDepartment.values()) {
+            if (eDepartment.getValue().equals(value)) {
+                return eDepartment;
+            }
+        }
+        return null;
+    }
+
 }

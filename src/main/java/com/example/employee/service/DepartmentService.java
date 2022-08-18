@@ -1,6 +1,7 @@
 package com.example.employee.service;
 
 import com.example.employee.common.Constant;
+import com.example.employee.common.enumerate.EDepartment;
 import com.example.employee.model.dto.DepartmentBean;
 import com.example.employee.model.dto.PageDto;
 import com.example.employee.model.exception.ValidationException;
@@ -44,15 +45,24 @@ public class DepartmentService {
             throw new ValidationException(Collections.singletonList("Invalid request - number format"));
         }
 
+        if(CollectionUtils.isEmpty(sortBy)){
+            sortBy = new ArrayList<>();
+            sortBy.add("department_id");
+        }else if(sortBy.size() == 0){
+            sortBy.add("department_id");
+        }else if(sortBy.size() == 1 && sortBy.get(0).trim().equals("")){
+            sortBy.set(0, "department_id");
+        }else{
+            if(!isValidSortByRequest(sortBy)){
+                throw new ValidationException(Collections.singletonList("Bad request - sort fields is valid"));
+            }
+        }
+
         if(limit == null){
             limit = "10";
         }
         if(offset == null){
             offset = "0";
-        }
-        if(CollectionUtils.isEmpty(sortBy)){
-            sortBy = new ArrayList<>();
-            sortBy.add("department_id");
         }
 
         List<DepartmentBean> employees = departmentRepository.getAllDepartmentBeen(
@@ -91,6 +101,21 @@ public class DepartmentService {
         }
 
         return true;
+    }
+
+    private boolean isValidSortByRequest(List<String> sortList) {
+        boolean isValid = true;
+        for(String sortBy : sortList) {
+            if(!isEmployeeColumns(sortBy)){
+                isValid = false;
+                break;
+            }
+        }
+        return isValid;
+    }
+
+    private boolean isEmployeeColumns(String field) {
+        return EDepartment.getByValue(field) != null;
     }
 
 

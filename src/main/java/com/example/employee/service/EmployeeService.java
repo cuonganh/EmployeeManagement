@@ -1,6 +1,7 @@
 package com.example.employee.service;
 
 import com.example.employee.common.Constant;
+import com.example.employee.common.enumerate.EDepartment;
 import com.example.employee.common.enumerate.EEmployee;
 import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.dto.EmployeeDto;
@@ -85,16 +86,25 @@ public class EmployeeService {
         LOGGER.info(Constant.START);
         LOGGER.info("Get employees list");
 
-        if(!isValidGetEmployeesRequest(departmentId, projectId, limit, offset)){
-            throw new ValidationException(Collections.singletonList("Invalid request - number format"));
+        if(isValidNumberGetEmployeesRequest(departmentId, projectId, limit, offset)){
+            throw new ValidationException(Collections.singletonList("Bad request - number format"));
+        }
+
+        if(CollectionUtils.isEmpty(sortBy)){
+            sortBy = new ArrayList<>();
+            sortBy.add("employeeId");
+        }else if(sortBy.size() == 0){
+            sortBy.add("employeeId");
+        }else if(sortBy.size() == 1 && sortBy.get(0).trim().equals("")){
+            sortBy.add("employeeId");
+        }else{
+            if(!isValidSortByRequest(sortBy)){
+                throw new ValidationException(Collections.singletonList("Bad request - sort fields is valid"));
+            }
         }
 
         if(limit == null) limit = "10";
         if(offset == null) offset = "0";
-        if(CollectionUtils.isEmpty(sortBy)){
-            sortBy = new ArrayList<>();
-            sortBy.add("employeeId");
-        }
 
         List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
                 entityManager,
@@ -118,7 +128,7 @@ public class EmployeeService {
 
     }
 
-    private boolean isValidGetEmployeesRequest(
+    private boolean isValidNumberGetEmployeesRequest(
             String departmentId,
             String projectId,
             String limit,
@@ -130,10 +140,20 @@ public class EmployeeService {
             if(limit != null) Long.valueOf(limit);
             if(offset!= null) Long.valueOf(offset);
         }catch(NumberFormatException nfe) {
-            return false;
+            return true;
         }
 
-        return true;
+        return false;
+    }
+
+    private boolean isValidSortByRequest(List<String> sortList){
+        boolean isValid = true;
+        for(String sortBy : sortList) {
+            if(!isEmployeeColumns(sortBy) || sortBy.equalsIgnoreCase(EEmployee.DEPARTMENT_ID.getValue())){
+                isValid = false;
+            }
+        }
+        return isValid;
     }
 
     @Transactional
@@ -345,8 +365,8 @@ public class EmployeeService {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Export Employees");
-        if(!isValidGetEmployeesRequest(departmentId, projectId, limit, offset)){
-            throw new ValidationException(Collections.singletonList("Invalid request - number format"));
+        if(isValidNumberGetEmployeesRequest(departmentId, projectId, limit, offset)){
+            throw new ValidationException(Collections.singletonList("Bad request - number format"));
         }
         try {
             String directionFile = exportFolder + LocalDate.now() + ".csv";
@@ -381,18 +401,7 @@ public class EmployeeService {
     }
 
     private boolean isEmployeeColumns(String field){
-        Map<String, String> employeeColumns = new HashMap<>();
-        employeeColumns.put("employeeId", EEmployee.EMPLOYEE_ID.getValue());
-        employeeColumns.put("departmentId", EEmployee.DEPARTMENT_ID.getValue());
-        employeeColumns.put("department", EEmployee.DEPARTMENT.getValue());
-        employeeColumns.put("firstName", EEmployee.FIRST_NAME.getValue());
-        employeeColumns.put("lastName", EEmployee.LAST_NAME.getValue());
-        employeeColumns.put("dateOfBirth", EEmployee.DATE_OF_BIRTH.getValue());
-        employeeColumns.put("address", EEmployee.ADDRESS.getValue());
-        employeeColumns.put("email", EEmployee.EMAIL.getValue());
-        employeeColumns.put("phoneNumber", EEmployee.PHONE_NUMBER.getValue());
-
-        return field.equalsIgnoreCase(employeeColumns.get(field));
+        return EEmployee.getByValue(field) != null;
     }
 
     private StringBuilder createCSVHeaderOption(String[] exportFields){

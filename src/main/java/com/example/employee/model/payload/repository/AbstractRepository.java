@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface AbstractRepository {
 
-    default StringBuilder createSortAndOrderQuery(String sortType, List<String> sortBy){
+    default StringBuilder createSortAndOrderQuery(String sortType, List<String> sortList){
         StringBuilder sqlQuery = new StringBuilder();
 
         if(sortType != null && sortType.equalsIgnoreCase("desc")) {
@@ -12,15 +12,19 @@ public interface AbstractRepository {
         }else{
             sortType = " ASC";
         }
-        if(sortBy != null) {
-            sqlQuery.append(" ORDER BY ");
-            for (int i = 0; i < sortBy.size(); i++) {
-                if(i != 0) {
-                    sqlQuery.append(", ");
-                }
-                sqlQuery.append(sortBy.get(i)).append(" ").append(sortType);
-            }
+
+        sqlQuery.append(" ORDER BY ");
+        for (String sortBy : sortList) {
+            sqlQuery.append(sortBy)
+                    .append(" ")
+                    .append(sortType)
+                    .append(", ")
+            ;
         }
+        //remove the last ", "
+        //sqlQuery.deleteCharAt(sqlQuery.length() - 2);
+        sqlQuery.delete(sqlQuery.length() - 2, sqlQuery.length());
+
         return sqlQuery;
     }
 

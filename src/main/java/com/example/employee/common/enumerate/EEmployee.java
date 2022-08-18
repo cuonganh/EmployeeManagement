@@ -23,4 +23,13 @@ public enum EEmployee {
         return value;
     }
 
+    public static EEmployee getByValue(String value) {
+        for (EEmployee eEmployee : EEmployee.values()) {
+            if (eEmployee.getValue().equals(value)) {
+                return eEmployee;
+            }
+        }
+        return null;
+    }
+
 }
