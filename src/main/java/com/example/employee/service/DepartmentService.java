@@ -1,8 +1,10 @@
 package com.example.employee.service;
 
 import com.example.employee.common.Constant;
+import com.example.employee.common.enumerate.EDepartment;
 import com.example.employee.model.dto.DepartmentBean;
 import com.example.employee.model.dto.PageDto;
+import com.example.employee.model.exception.ValidationException;
 import com.example.employee.model.payload.repository.DepartmentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,7 @@ import org.springframework.util.CollectionUtils;
 
 import javax.persistence.EntityManager;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -27,40 +30,92 @@ public class DepartmentService {
     private final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
 
     public PageDto<DepartmentBean> getDepartments(
-            Long member,
+            String members,
             String name,
-            Integer limit,
-            Integer offset,
+            String limit,
+            String offset,
             String sort,
             List<String> sortBy
-    ) {
+    ) throws ValidationException {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Get departments list");
 
-        if(limit == null){
-            limit = 10;
+        if(!isValidGetDepartmentsRequest(members, limit, offset)){
+            throw new ValidationException(Collections.singletonList("Invalid request - number format"));
         }
-        if(offset == null){
-            offset = 0;
-        }
+
         if(CollectionUtils.isEmpty(sortBy)){
             sortBy = new ArrayList<>();
             sortBy.add("department_id");
+        }else if(sortBy.size() == 0){
+            sortBy.add("department_id");
+        }else if(sortBy.size() == 1 && sortBy.get(0).trim().equals("")){
+            sortBy.set(0, "department_id");
+        }else{
+            if(!isValidSortByRequest(sortBy)){
+                throw new ValidationException(Collections.singletonList("Bad request - sort fields is valid"));
+            }
+        }
+
+        if(limit == null){
+            limit = "10";
+        }
+        if(offset == null){
+            offset = "0";
         }
 
         List<DepartmentBean> employees = departmentRepository.getAllDepartmentBeen(
                 entityManager,
-                member,
+                members,
                 name,
                 limit,
                 offset,
                 sort,
                 sortBy
         );
-        Long total =departmentRepository.countByCondition(entityManager, member, name, sort, sortBy);
+        Long total =departmentRepository.countByCondition(entityManager, members, name, sort, sortBy);
         LOGGER.info(Constant.END);
-        return new PageDto<>(200, "Found employees", limit, offset, total, employees);
+        return new PageDto<>(
+                200,
+                "Found employees",
+                Integer.parseInt(limit),
+                Integer.parseInt(offset),
+                total,
+                employees
+        );
+
+    }
+
+    private boolean isValidGetDepartmentsRequest(
+            String members,
+            String limit,
+            String offset
+    ) {
+        try {
+            if(members != null) Long.valueOf(members);
+            if(limit != null) Long.valueOf(limit);
+            if(offset!= null) Long.valueOf(offset);
+        }catch(NumberFormatException nfe) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isValidSortByRequest(List<String> sortList) {
+        boolean isValid = true;
+        for(String sortBy : sortList) {
+            if(!isEmployeeColumns(sortBy)){
+                isValid = false;
+                break;
+            }
+        }
+        return isValid;
+    }
+
+    private boolean isEmployeeColumns(String field) {
+        return EDepartment.getByValue(field) != null;
     }
 
 

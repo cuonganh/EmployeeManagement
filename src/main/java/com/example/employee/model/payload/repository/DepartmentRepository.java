@@ -15,17 +15,17 @@ public interface DepartmentRepository extends JpaRepository<Departments, Long>, 
 
     default List<DepartmentBean> getAllDepartmentBeen(
             EntityManager entityManager,
-            Long member,
+            String members,
             String name,
-            Integer limit,
-            Integer offset,
+            String limit,
+            String offset,
             String sortType,
             List<String> sortBy
     ){
-        StringBuilder sqlQuery = new StringBuilder("SELECT d.department_id, d.name, d.member, " +
+        StringBuilder sqlQuery = new StringBuilder("SELECT d.department_id, d.name, d.members, " +
                 "d.description, d.leader");
 
-        sqlQuery.append(createDepartmentQuery(member, name, sortType, sortBy));
+        sqlQuery.append(createDepartmentQuery(members, name, sortType, sortBy));
 
         if(limit != null) {
             sqlQuery.append(" LIMIT ").append(limit);
@@ -44,7 +44,7 @@ public interface DepartmentRepository extends JpaRepository<Departments, Long>, 
 
     default Long countByCondition(
             EntityManager entityManager,
-            Long member,
+            String members,
             String name,
             String sortType,
             List<String> sortBy
@@ -52,7 +52,7 @@ public interface DepartmentRepository extends JpaRepository<Departments, Long>, 
 
         javax.persistence.Query sqlNative = entityManager.createNativeQuery(
                 "SELECT COUNT(department_id) " +
-                        createDepartmentQuery(member, name, sortType, sortBy)
+                        createDepartmentQuery(members, name, sortType, sortBy)
         );
 
         BigInteger total = (BigInteger) sqlNative.getSingleResult();
@@ -61,7 +61,7 @@ public interface DepartmentRepository extends JpaRepository<Departments, Long>, 
     }
 
     default StringBuilder createDepartmentQuery(
-            Long member,
+            String members,
             String name,
             String sortType,
             List<String> sortBy
@@ -70,8 +70,8 @@ public interface DepartmentRepository extends JpaRepository<Departments, Long>, 
         if(name != null) {
             sqlQuery.append(" and name LIKE '%").append(name).append("%'");
         }
-        if(member != null) {
-            sqlQuery.append(" AND member = ").append(member);
+        if(members != null) {
+            sqlQuery.append(" AND members = ").append(members);
         }
         sqlQuery.append(createSortAndOrderQuery(sortType, sortBy));
 

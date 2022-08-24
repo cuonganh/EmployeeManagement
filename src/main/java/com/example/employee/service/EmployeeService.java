@@ -1,6 +1,7 @@
 package com.example.employee.service;
 
 import com.example.employee.common.Constant;
+import com.example.employee.common.enumerate.EDepartment;
 import com.example.employee.common.enumerate.EEmployee;
 import com.example.employee.model.dto.EmployeeBean;
 import com.example.employee.model.dto.EmployeeDto;
@@ -52,37 +53,59 @@ public class EmployeeService {
 
     public EmployeeResponse<List<EmployeeBean>> getEmployee(
             EntityManager entityManager,
-            Long employeeId
-    ) throws ResourceNotFoundException {
+            String employeeId
+    ) throws ResourceNotFoundException, ValidationException {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Get employee by id: " + employeeId);
-        List<EmployeeBean> employeeBeen = employeeRepository.getEmployee(entityManager, employeeId);
+
+        try{
+            Long.valueOf(employeeId);
+        }catch (NumberFormatException numberFormatException) {
+            throw new ValidationException(Collections.singletonList("EmployeeId is in valid"));
+        }
+
+        List<EmployeeBean> employeeBeen = employeeRepository.getEmployee(entityManager, Long.valueOf(employeeId));
         if(employeeBeen.get(0).getEmployeeId() == null) {
             throw new ResourceNotFoundException();
         }
+
         LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Found Employee", employeeBeen);
 
     }
 
     public PageDto<EmployeeDto> getEmployees(
-            Long departmentId,
-            Long projectId,
-            Integer limit,
-            Integer offset,
+            String departmentId,
+            String projectId,
+            String limit,
+            String offset,
             String sort,
             List<String> sortBy
-    ) {
+    ) throws ValidationException {
         LOGGER.info(Constant.START);
         LOGGER.info("Get employees list");
 
-        if(limit == null) limit = 10;
-        if(offset == null) offset = 0;
+        if(isValidNumberGetEmployeesRequest(departmentId, projectId, limit, offset)){
+            throw new ValidationException(Collections.singletonList("Bad request - number format"));
+        }
+
         if(CollectionUtils.isEmpty(sortBy)){
             sortBy = new ArrayList<>();
             sortBy.add("employeeId");
+        }else if(sortBy.size() == 0){
+            sortBy.add("employeeId");
+        }else if(sortBy.size() == 1 && sortBy.get(0).trim().equals("")){
+            sortBy.add("employeeId");
+        }else{
+            if(!isValidSortByRequest(sortBy)){
+                throw new ValidationException(Collections.singletonList("Bad request - sort fields is valid"));
+            }
         }
+
+        if(limit == null) limit = "10";
+        if(offset == null) offset = "0";
+
         List<EmployeeBean> employees = employeeRepository.getAllEmployeeBeen(
                 entityManager,
                 departmentId,
@@ -94,7 +117,43 @@ public class EmployeeService {
         );
         Long total =employeeRepository.countByCondition(entityManager, departmentId, projectId);
         LOGGER.info(Constant.END);
-        return new PageDto<>(200, "Found employees", limit, offset, total, employees);
+        return new PageDto<>(
+                200,
+                "Found employees",
+                Integer.parseInt(limit),
+                Integer.parseInt(offset),
+                total,
+                employees
+        );
+
+    }
+
+    private boolean isValidNumberGetEmployeesRequest(
+            String departmentId,
+            String projectId,
+            String limit,
+            String offset
+    ) {
+        try {
+            if(departmentId != null) Long.valueOf(departmentId);
+            if(projectId != null) Long.valueOf(projectId);
+            if(limit != null) Long.valueOf(limit);
+            if(offset!= null) Long.valueOf(offset);
+        }catch(NumberFormatException nfe) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isValidSortByRequest(List<String> sortList){
+        boolean isValid = true;
+        for(String sortBy : sortList) {
+            if(!isEmployeeColumns(sortBy) || sortBy.equalsIgnoreCase(EEmployee.DEPARTMENT_ID.getValue())){
+                isValid = false;
+            }
+        }
+        return isValid;
     }
 
     @Transactional
@@ -145,25 +204,29 @@ public class EmployeeService {
     }
 
     @Transactional
-    public EmployeeResponse<Employees> updateEmployee(EmployeeRequest employeeRequest, Long employeeId) throws ResourceNotFoundException, ValidationException {
+    public EmployeeResponse<Employees> updateEmployee(EmployeeRequest employeeRequest, String employeeId) throws ResourceNotFoundException, ValidationException {
         LOGGER.info(Constant.START);
         LOGGER.info("Update for employee with employeeId " + employeeId);
-
+        try{
+            Long.valueOf(employeeId);
+        }catch (NumberFormatException numberFormatException) {
+            throw new ValidationException(Collections.singletonList("EmployeeId is in valid"));
+        }
         if(!employeeRequest.isValidateUpdateEmployee(employeeRequest)){
             throw new ValidationException(Collections.singletonList("Bad request"));
         }
-        Optional<Employees> employeeOptional = employeeRepository.findById(employeeId);
+        Optional<Employees> employeeOptional = employeeRepository.findById(Long.valueOf(employeeId));
         if(!employeeOptional.isPresent()) {
             throw new ResourceNotFoundException("EmployeeId " + employeeId + " does not exist");
         }
-        if(!canUpdateThisEmail(employeeRequest, employeeId)){
+        if(!canUpdateThisEmail(employeeRequest, Long.valueOf(employeeId))){
             throw new ValidationException(Collections.singletonList("Email was used"));
         }
 
         Employees employeeNew = employeeOptional.get().getUpdateEmployee(employeeRequest);
         employeeRepository.save(employeeNew);
 
-        updateProjects(employeeRequest, employeeId);
+        updateProjects(employeeRequest, Long.parseLong(employeeId));
 
         LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Updated employee");
@@ -204,15 +267,20 @@ public class EmployeeService {
     }
 
     @Transactional
-    public EmployeeResponse<Employees> deleteEmployee(Long employeeId) throws ResourceNotFoundException{
+    public EmployeeResponse<Employees> deleteEmployee(String employeeId) throws ResourceNotFoundException, ValidationException {
         LOGGER.info(Constant.START);
         LOGGER.info("Delete employee " + employeeId);
-        Optional<Employees> employee = employeeRepository.findById(employeeId);
+        try{
+            Long.valueOf(employeeId);
+        }catch (NumberFormatException numberFormatException) {
+            throw new ValidationException(Collections.singletonList("EmployeeId is in valid"));
+        }
+        Optional<Employees> employee = employeeRepository.findById(Long.valueOf(employeeId));
         if(!employee.isPresent()) {
             throw new ResourceNotFoundException("Resource not found");
         }
-        employeeRepository.deleteById(employeeId);
-        teamRepository.deleteByEmployeeId(employeeId);
+        employeeRepository.deleteById(Long.valueOf(employeeId));
+        teamRepository.deleteByEmployeeId(Long.valueOf(employeeId));
         LOGGER.info(Constant.END);
         return new EmployeeResponse<>(200, "Deleted employee");
     }
@@ -287,16 +355,19 @@ public class EmployeeService {
     }
 
     public EmployeeResponse<?> exportEmployees(
-            Long departmentId,
-            Long projectId,
+            String departmentId,
+            String projectId,
             String[] exportFields,
-            Integer limit,
-            Integer offset,
+            String limit,
+            String offset,
             String sort,
-            List<String> sortBy) throws FileNotFoundException {
+            List<String> sortBy) throws FileNotFoundException, ValidationException {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Export Employees");
+        if(isValidNumberGetEmployeesRequest(departmentId, projectId, limit, offset)){
+            throw new ValidationException(Collections.singletonList("Bad request - number format"));
+        }
         try {
             String directionFile = exportFolder + LocalDate.now() + ".csv";
             PrintWriter csvWriter = new PrintWriter(directionFile);
@@ -330,18 +401,7 @@ public class EmployeeService {
     }
 
     private boolean isEmployeeColumns(String field){
-        Map<String, String> employeeColumns = new HashMap<>();
-        employeeColumns.put("employeeId", EEmployee.EMPLOYEE_ID.getValue());
-        employeeColumns.put("departmentId", EEmployee.DEPARTMENT_ID.getValue());
-        employeeColumns.put("department", EEmployee.DEPARTMENT.getValue());
-        employeeColumns.put("firstName", EEmployee.FIRST_NAME.getValue());
-        employeeColumns.put("lastName", EEmployee.LAST_NAME.getValue());
-        employeeColumns.put("dateOfBirth", EEmployee.DATE_OF_BIRTH.getValue());
-        employeeColumns.put("address", EEmployee.ADDRESS.getValue());
-        employeeColumns.put("email", EEmployee.EMAIL.getValue());
-        employeeColumns.put("phoneNumber", EEmployee.PHONE_NUMBER.getValue());
-
-        return field.equalsIgnoreCase(employeeColumns.get(field));
+        return EEmployee.getByValue(field) != null;
     }
 
     private StringBuilder createCSVHeaderOption(String[] exportFields){

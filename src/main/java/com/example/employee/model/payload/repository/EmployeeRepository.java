@@ -38,10 +38,10 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long>, Abst
 
     default List<EmployeeBean> getAllEmployeeBeen(
             EntityManager entityManager,
-            Long departmentId,
-            Long projectId,
-            Integer limit,
-            Integer offset,
+            String departmentId,
+            String projectId,
+            String limit,
+            String offset,
             String sortType,
             List<String> sortBy
     ){
@@ -79,7 +79,7 @@ public interface EmployeeRepository extends JpaRepository<Employees, Long>, Abst
                 .collect(Collectors.toList());
     }
 
-    default Long countByCondition(EntityManager entityManager, Long departmentId, Long projectId){
+    default Long countByCondition(EntityManager entityManager, String departmentId, String projectId){
 
         StringBuilder sql = new StringBuilder("SELECT count(distinct e.employee_id)" +
                 " FROM employee e" +

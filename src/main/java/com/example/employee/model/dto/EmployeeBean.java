@@ -1,6 +1,5 @@
 package com.example.employee.model.dto;
 
-import com.example.employee.common.enumerate.EPriorityLevel;
 import lombok.Data;
 
 import java.util.ArrayList;
