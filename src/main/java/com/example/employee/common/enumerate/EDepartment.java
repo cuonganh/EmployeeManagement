@@ -21,7 +21,7 @@ public enum EDepartment {
 
     public static EDepartment getByValue(String value) {
         for (EDepartment eDepartment : EDepartment.values()) {
-            if (eDepartment.getValue().equals(value)) {
+            if (eDepartment.getValue().equalsIgnoreCase(value)) {
                 return eDepartment;
             }
         }
