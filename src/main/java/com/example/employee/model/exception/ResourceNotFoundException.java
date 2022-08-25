@@ -21,9 +21,4 @@ public class ResourceNotFoundException extends Exception {
         this.message = message;
     }
 
-    public ResourceNotFoundException(int code, String message){
-        this.code = code;
-        this.message = message;
-    }
-
 }
