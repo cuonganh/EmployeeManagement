@@ -25,7 +25,7 @@ public enum EEmployee {
 
     public static EEmployee getByValue(String value) {
         for (EEmployee eEmployee : EEmployee.values()) {
-            if (eEmployee.getValue().equals(value)) {
+            if (eEmployee.getValue().equalsIgnoreCase(value)) {
                 return eEmployee;
             }
         }
