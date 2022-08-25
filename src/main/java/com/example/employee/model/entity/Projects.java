@@ -1,6 +1,5 @@
 package com.example.employee.model.entity;
 
-import com.example.employee.common.enumerate.EPriorityLevel;
 import lombok.Data;
 
 import javax.persistence.*;
