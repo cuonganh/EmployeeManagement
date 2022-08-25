@@ -105,10 +105,13 @@ public class DepartmentService {
 
     private boolean isValidSortByRequest(List<String> sortList) {
         boolean isValid = true;
-        for(String sortBy : sortList) {
-            if(!isEmployeeColumns(sortBy)){
+        for(int i = 0; i < sortList.size(); ++i) {
+            if(!isEmployeeColumns(sortList.get(i))){
                 isValid = false;
                 break;
+            }
+            if(sortList.get(i).trim().equalsIgnoreCase("departmentId")){
+                sortList.set(i, "department_id");
             }
         }
         return isValid;
