@@ -88,7 +88,7 @@ public class EmployeeService {
         LOGGER.info(Constant.START);
         LOGGER.info("Get employees list");
 
-        if(isValidNumberGetEmployeesRequest(departmentId, projectId, limit, offset)){
+        if(!isValidNumberGetEmployeesRequest(departmentId, projectId, limit, offset)){
             throw new ValidationException(Collections.singletonList("Bad request - number format"));
         }
 
@@ -142,10 +142,9 @@ public class EmployeeService {
             if(limit != null) Long.valueOf(limit);
             if(offset!= null) Long.valueOf(offset);
         }catch(NumberFormatException nfe) {
-            return true;
+            return false;
         }
-
-        return false;
+        return true;
     }
 
     private boolean isValidSortByRequest(List<String> sortList){
@@ -367,7 +366,7 @@ public class EmployeeService {
 
         LOGGER.info(Constant.START);
         LOGGER.info("Export Employees");
-        if(isValidNumberGetEmployeesRequest(departmentId, projectId, limit, offset)){
+        if(!isValidNumberGetEmployeesRequest(departmentId, projectId, limit, offset)){
             throw new ValidationException(Collections.singletonList("Bad request - number format"));
         }
         try {
