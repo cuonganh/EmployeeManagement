@@ -1,0 +1,14 @@
+volumes:
+  data:
+
+services:
+  mysql:
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysqlpw
+    ports:
+      - 3306:3306
+    volumes:
+      - data:/var/lib/mysql
+  myapp:
+    image: [YOUR-APP-IMAGE]
